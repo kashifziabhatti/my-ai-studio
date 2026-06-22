@@ -1,361 +1,629 @@
 <!DOCTYPE html>
 <html lang="en" class="dark">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Image Studio | TheVoxCritic</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Image Studio · Kashif</title>
+    <script src="https://cdn.tailwindcss.com">
+    </script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
     <script>
         tailwind.config = {
             darkMode: 'class',
             theme: {
                 extend: {
-                    fontFamily: {
-                        sans: ['"Plus Jakarta Sans"', 'sans-serif'],
-                    },
+                    fontFamily: { sans: ['"Plus Jakarta Sans"', 'sans-serif'] },
                     colors: {
                         dark: '#0f111a',
                         darker: '#0a0b10',
-                        primary: '#38ffff',
-                        secondary: '#6366f1'
+                        primary: '#6366f1',
+                        secondary: '#a855f7',
                     }
                 }
             }
         }
     </script>
     <style>
+        /* ── (styles same as v8, kept for brevity but fully functional) ── */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
         body {
-            background-color: #0f111a;
-            background-image: 
-                radial-gradient(at 0% 0%, hsla(253,16%,7%,1) 0, transparent 50%), 
-                radial-gradient(at 50% 0%, hsla(180,100%,50%,0.05) 0, transparent 50%), 
-                radial-gradient(at 100% 0%, hsla(250,50%,30%,0.15) 0, transparent 50%);
-            background-attachment: fixed;
-            color: #ffffff;
+            background: radial-gradient(circle at top, rgba(99, 102, 241, 0.08), transparent 25%), radial-gradient(circle at bottom, rgba(168, 85, 247, 0.05), transparent 18%), #06080f;
+            color: #ebf1ff;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
         }
-        .glass-panel {
-            background: rgba(255, 255, 255, 0.02);
+        .glass {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(10px);
+        }
+        .glass-heavy {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.1);
             backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2);
         }
-        .custom-scrollbar::-webkit-scrollbar {
+        ::-webkit-scrollbar {
             width: 6px;
         }
-        .custom-scrollbar::-webkit-scrollbar-track {
-            background: rgba(255, 255, 255, 0.01);
+        ::-webkit-scrollbar-track {
+            background: transparent;
         }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 10px;
+        ::-webkit-scrollbar-thumb {
+            background: rgba(99, 102, 241, 0.4);
+            border-radius: 12px;
         }
-        .loader {
-            border: 3px solid rgba(255,255,255,0.1);
-            border-bottom-color: #38ffff;
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(99, 102, 241, 0.7);
+        }
+        .spinner {
+            border: 2px solid rgba(255, 255, 255, 0.08);
+            border-top-color: #8b5cf6;
             border-radius: 50%;
-            display: inline-block;
-            box-sizing: border-box;
-            animation: rotation 1s linear infinite;
+            width: 40px;
+            height: 40px;
+            animation: spin 0.8s linear infinite;
         }
-        @keyframes rotation {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
         }
-        .toast-enter {
-            animation: slideInRight 0.3s ease-out forwards;
+        #resultImage {
+            max-width: 100%;
+            max-height: 70vh;
+            object-fit: contain;
+            border-radius: 22px;
+            box-shadow: 0 18px 36px rgba(0, 0, 0, 0.24);
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
-        @keyframes slideInRight {
-            from { transform: translateX(100%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
+        #resultImage:hover {
+            transform: scale(1.01);
+            box-shadow: 0 25px 70px rgba(99, 102, 241, 0.15);
+        }
+        .expand-compare {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        .expand-compare .thumb {
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            background: rgba(0, 0, 0, 0.3);
+        }
+        .expand-compare .thumb img {
+            width: 100%;
+            height: auto;
+            display: block;
+            cursor: pointer;
+        }
+        .expand-compare .thumb .label {
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            padding: 6px 12px;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+            text-align: center;
+        }
+        @media (max-width: 640px) {
+            .expand-compare {
+                grid-template-columns: 1fr;
+            }
+            #resultImage {
+                max-height: 50vh;
+            }
+        }
+        .btn-glow:hover {
+            box-shadow: 0 0 12px rgba(99, 102, 241, 0.12);
+        }
+        .modal-overlay {
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(12px);
+            animation: fadeIn 0.25s ease;
+        }
+        .modal-overlay img {
+            max-width: 94vw;
+            max-height: 94vh;
+            object-fit: contain;
+            border-radius: 12px;
+            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.8);
+        }
+        select,
+        input[type="password"],
+        input[type="text"] {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #e5e7eb;
+            border-radius: 18px;
+            padding: 10px 14px;
+            font-size: 0.95rem;
+            transition: border-color 0.2s, background 0.2s;
+        }
+        select:focus,
+        input:focus {
+            outline: none;
+            border-color: rgba(99, 102, 241, 0.35);
+            background: rgba(255, 255, 255, 0.12);
+        }
+        select option {
+            background: #121827;
+        }
+        textarea {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            color: #f1f3f5;
+            font-size: 1rem;
+            line-height: 1.6;
+            resize: vertical;
+            min-height: 140px;
+            width: 100%;
+            padding: 16px 16px;
+            border-radius: 20px;
+        }
+        textarea::placeholder {
+            color: rgba(255, 255, 255, 0.3);
+        }
+        textarea:focus {
+            outline: none;
+        }
+        .badge {
+            font-size: 0.65rem;
+            font-weight: 600;
+            letter-spacing: 0.06em;
+            padding: 5px 14px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            color: #f8fafc;
+        }
+        .fade-in {
+            animation: fadeIn 0.4s ease;
+        }
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(12px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .fade-in-fast {
+            animation: fadeIn 0.2s ease;
+        }
+        .settings-trigger {
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .settings-trigger:hover {
+            transform: rotate(60deg);
+        }
+        .lightbox-close {
+            position: absolute;
+            top: 14px;
+            right: 14px;
+            font-size: 1.6rem;
+            color: rgba(255, 255, 255, 0.8);
+            cursor: pointer;
+            transition: color 0.2s, transform 0.2s;
+            z-index: 60;
+            background: rgba(0, 0, 0, 0.28);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+        }
+        .lightbox-close:hover {
+            color: #fff;
+            transform: rotate(90deg);
+            background: rgba(0, 0, 0, 0.6);
+        }
+        .model-tag {
+            position: absolute;
+            bottom: 22px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.48);
+            backdrop-filter: blur(8px);
+            padding: 5px 16px;
+            border-radius: 999px;
+            font-size: 0.72rem;
+            color: #c0cbff;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            pointer-events: none;
         }
     </style>
 </head>
-<body class="min-h-screen flex flex-col font-sans text-gray-200">
+<body>
 
-    <!-- Navbar -->
-    <nav class="glass-panel sticky top-0 z-40 w-full backdrop-blur-lg border-b border-white/5">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex items-center justify-between h-16">
-                <div class="flex items-center gap-3">
-                    <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-lg shadow-primary/20">
-                        <i class="fa-solid fa-wand-magic-sparkles text-darker text-sm font-bold"></i>
-                    </div>
-                    <span class="font-bold text-xl tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-400">TheVoxCritic Studio</span>
-                </div>
-                <div>
-                    <button onclick="toggleSettings()" class="p-2.5 rounded-xl bg-white/5 hover:bg-white/10 transition-colors border border-white/5 text-gray-300">
-                        <i class="fa-solid fa-gear"></i>
-                    </button>
-                </div>
+    <!-- ====== NAV ====== -->
+    <nav class="glass sticky top-0 z-40 w-full border-b border-white/10">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <span class="font-semibold text-lg tracking-tight">AI Vision</span>
             </div>
         </div>
     </nav>
 
-    <!-- Main Content -->
-    <main class="flex-grow max-w-5xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 flex flex-col gap-8">
-        
-        <!-- Header Text -->
-        <div class="text-center space-y-3 mt-4">
-            <h1 class="text-4xl md:text-5xl font-extrabold tracking-tight">AI <span class="text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary">Image Generator</span></h1>
-            <p class="text-gray-400 max-w-2xl mx-auto text-sm md:text-base">Apna prompt niche likhein aur behtareen AI images generate karein. Yeh tool GitHub Pages par 100% free chalega.</p>
+    <!-- ====== MAIN ====== -->
+    <main class="flex-grow max-w-5xl mx-auto w-full px-4 py-6 sm:py-10 flex flex-col gap-6">
+
+        <div class="text-center space-y-1">
+            <h1 class="text-3xl sm:text-4xl font-semibold tracking-tight">AI Vision</h1>
+            <p class="text-gray-400 text-sm max-w-md mx-auto">Minimal image generation in one clean flow.</p>
         </div>
 
-        <!-- Input Section -->
-        <div class="glass-panel p-2 rounded-3xl relative mx-auto w-full max-w-3xl">
-            <textarea id="promptInput" rows="3" class="w-full bg-transparent text-white placeholder-gray-500 rounded-2xl p-4 focus:outline-none resize-none custom-scrollbar text-lg" placeholder="A cinematic cyberpunk street with cyan neon lights, 8k resolution, highly detailed..."></textarea>
-            
-            <div class="flex items-center justify-between p-2 mt-2 border-t border-white/5 pt-3">
-                <div class="flex items-center gap-2">
-                    <select id="modelSelector" class="bg-darker border border-white/10 text-gray-300 text-sm rounded-lg focus:ring-primary focus:border-primary block p-2 outline-none">
-                        <option value="free">Free AI (No Key Needed)</option>
-                        <option value="gemini">Google Gemini (Imagen Paid)</option>
-                        <option value="openai">ChatGPT (DALL-E 3 Paid)</option>
+        <!-- ====== INPUT PANEL ====== -->
+        <div class="glass rounded-2xl p-4 sm:p-5 w-full max-w-3xl mx-auto border border-white/5">
+
+            <textarea id="promptInput" rows="3" class="w-full text-white placeholder:text-gray-500/60 focus:outline-none resize-y text-base sm:text-lg" placeholder="Apna idea likhein … e.g. a cyberpunk city at sunset, neon lights, rain, 8k"></textarea>
+
+            <div class="flex flex-wrap items-center justify-between gap-3 mt-2 pt-3 border-t border-white/5">
+
+                <div class="flex flex-wrap items-center gap-2">
+                    <select id="modelSelector" class="text-sm">
+                        <option value="pollinations">Pollinations</option>
+                        <option value="pollinations_hd">Pollinations HD</option>
+                    </select>
+                    <select id="sizeSelector" class="text-sm">
+                        <option value="1024x1024">1:1 · Square</option>
+                        <option value="1024x1280">4:5 · Portrait</option>
+                        <option value="1280x1024">5:4 · Landscape</option>
+                        <option value="1280x720">16:9 · HD</option>
+                        <option value="720x1280">9:16 · Story</option>
+                        <option value="2048x1152">2K · 16:9</option>
+                        <option value="2560x1440">✨ 2K Wide</option>
+                        <option value="2048x2048">✨ 2K Square</option>
                     </select>
                 </div>
-                <button id="generateBtn" onclick="handleGenerate()" class="bg-gradient-to-r from-primary to-secondary hover:from-cyan-400 hover:to-indigo-500 text-darker font-bold py-2.5 px-6 rounded-xl transition-all transform active:scale-95 shadow-lg shadow-primary/20 flex items-center gap-2">
-                    <i class="fa-solid fa-image"></i>
-                    <span>Generate Image</span>
-                </button>
-            </div>
-        </div>
 
-        <!-- Result Section -->
-        <div class="w-full max-w-4xl mx-auto mt-4">
-            <div id="imageContainer" class="hidden glass-panel rounded-3xl overflow-hidden relative group aspect-square md:aspect-video flex items-center justify-center">
-                <!-- Loading State -->
-                <div id="loadingState" class="hidden flex-col items-center justify-center gap-4 text-gray-400 w-full h-full min-h-[400px]">
-                    <span class="loader w-12 h-12"></span>
-                    <p class="animate-pulse font-medium">AI aapki tasveer bana raha hai...</p>
-                </div>
-
-                <!-- Generated Image -->
-                <img id="resultImage" src="" alt="Generated AI Image" class="hidden w-full h-full object-contain">
-                
-                <!-- Overlay Actions -->
-                <div id="imageActions" class="hidden absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/80 to-transparent flex justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                    <button onclick="downloadImage()" class="bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/10 text-white rounded-xl py-2 px-4 transition-colors flex items-center gap-2">
-                        <i class="fa-solid fa-download"></i>
-                        <span>Download HD</span>
+                <div class="flex flex-wrap items-center gap-2">
+                    <button onclick="enhancePrompt()" class="bg-white/10 hover:bg-white/15 px-4 py-2 rounded-2xl text-sm font-medium transition-all border border-white/10">
+                        Enhance
+                    </button>
+                    <button id="generateBtn" onclick="handleGenerate()" class="bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90 px-6 py-2 rounded-2xl font-semibold text-sm shadow-sm shadow-primary/15 btn-glow transition-all">
+                        Generate
                     </button>
                 </div>
             </div>
+
+            <div class="flex justify-between items-center mt-3 text-xs text-gray-400">
+                <span id="modelStatus">Pollinations</span>
+                <span id="charCount">0 / 500</span>
+            </div>
         </div>
+
+        <!-- ====== IMAGE RESULT ====== -->
+        <div id="imageWrapper" class="hidden glass rounded-2xl p-4 sm:p-5 w-full max-w-3xl mx-auto border border-white/5 transition-all">
+            <div class="relative flex flex-col items-center">
+                <div class="w-full flex justify-center relative">
+                    <img id="resultImage" src="" alt="AI Image" class="rounded-xl shadow-2xl max-h-[70vh] w-auto" onclick="openLightbox(this.src)" />
+                    <div class="absolute bottom-3 right-3 bg-black/35 rounded-full px-3 py-1 text-xs text-gray-300 border border-white/10 pointer-events-none">
+                        <i class="fa-regular fa-expand"></i>
+                    </div>
+                </div>
+
+                <div class="flex flex-wrap items-center justify-center gap-3 mt-4 w-full">
+                    <button onclick="downloadImage()" class="bg-white/10 hover:bg-white/15 px-5 py-2 rounded-2xl text-sm font-medium transition-all border border-white/10">
+                        Download
+                    </button>
+                    <button onclick="handleExpand()" id="expandBtn" class="bg-emerald-500 hover:bg-emerald-400 px-5 py-2 rounded-2xl text-sm font-semibold shadow-sm shadow-emerald-400/20 transition-all">
+                        Expand
+                    </button>
+                    <button onclick="clearImage()" class="bg-white/10 hover:bg-white/15 px-4 py-2 rounded-2xl text-sm transition-all border border-white/10">
+                        Clear
+                    </button>
+                </div>
+
+                <div id="expandContainer" class="hidden w-full mt-5 pt-4 border-t border-white/10">
+                    <p class="text-xs text-gray-400 mb-3 flex items-center gap-2"><i class="fa-regular fa-arrows-left-right"></i> Original · Expanded</p>
+                    <div class="expand-compare" id="expandCompare">
+                        <div class="thumb">
+                            <img id="expandOriginal" src="" alt="original" onclick="openLightbox(this.src)" />
+                            <div class="label text-gray-400">Original</div>
+                        </div>
+                        <div class="thumb">
+                            <img id="expandExpanded" src="" alt="expanded" onclick="openLightbox(this.src)" />
+                            <div class="label text-gray-400">Expanded</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ====== LOADING ====== -->
+<div id="loadingPlaceholder" class="hidden glass rounded-2xl p-8 w-full max-w-3xl mx-auto border border-white/10 flex flex-col items-center justify-center min-h-[280px]">
+            <div class="spinner"></div>
+            <p class="mt-4 text-sm text-gray-400">Generating image…</p>
+            <p class="text-xs text-gray-400 mt-1" id="loadingModel">Pollinations</p>
+        </div>
+
     </main>
 
-    <!-- Settings Modal -->
-    <div id="settingsModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-        <div class="glass-panel w-full max-w-md rounded-2xl border border-white/10 shadow-2xl overflow-hidden transform transition-all">
-            <div class="p-6">
-                <div class="flex justify-between items-center mb-6">
-                    <h3 class="text-xl font-bold text-white">API Settings</h3>
-                    <button onclick="toggleSettings()" class="text-gray-400 hover:text-white transition-colors">
-                        <i class="fa-solid fa-xmark text-xl"></i>
-                    </button>
-                </div>
-                
-                <div class="space-y-5">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-300 mb-1">Google Gemini API Key</label>
-                        <div class="relative">
-                            <input type="password" id="geminiKey" class="w-full bg-darker border border-white/10 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-primary" placeholder="AIzaSy...">
-                            <p class="text-xs text-gray-500 mt-1">Get key from <a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-primary hover:underline">Google AI Studio</a></p>
-                        </div>
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-medium text-gray-300 mb-1">OpenAI (ChatGPT) API Key</label>
-                        <div class="relative">
-                            <input type="password" id="openAIKey" class="w-full bg-darker border border-white/10 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-primary" placeholder="sk-...">
-                            <p class="text-xs text-gray-500 mt-1">Get key from <a href="https://platform.openai.com/api-keys" target="_blank" class="text-primary hover:underline">OpenAI Platform</a></p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="mt-8 flex justify-end">
-                    <button onclick="saveSettings()" class="bg-white text-darker font-bold py-2 px-6 rounded-xl hover:bg-gray-200 transition-colors">
-                        Save Keys
-                    </button>
-                </div>
-            </div>
-        </div>
+    <!-- ====== LIGHTBOX ====== -->
+    <div id="lightbox" class="hidden fixed inset-0 z-50 modal-overlay flex items-center justify-center p-4" onclick="if(event.target===this)closeLightbox()">
+        <div class="lightbox-close" onclick="closeLightbox()"><i class="fa-solid fa-xmark"></i></div>
+        <img id="lightboxImage" src="" alt="Full size" class="fade-in-fast" />
+        <div class="model-tag" id="lightboxTag">AI Image</div>
     </div>
 
-    <!-- Toast Notifications Container -->
-    <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2"></div>
 
+    <!-- ====== JAVASCRIPT ====== -->
     <script>
-        // Load saved keys on startup
-        document.addEventListener('DOMContentLoaded', () => {
-            const savedGemini = localStorage.getItem('kashif_gemini_key');
-            const savedOpenAI = localStorage.getItem('kashif_openai_key');
-            
-            if(savedGemini) document.getElementById('geminiKey').value = savedGemini;
-            if(savedOpenAI) document.getElementById('openAIKey').value = savedOpenAI;
+        const $ = id => document.getElementById(id);
+        const promptInput = $('promptInput');
+        const resultImage = $('resultImage');
+        const imageWrapper = $('imageWrapper');
+        const loadingPlaceholder = $('loadingPlaceholder');
+        const modelSelector = $('modelSelector');
+        const sizeSelector = $('sizeSelector');
+        const modelStatus = $('modelStatus');
+        const charCount = $('charCount');
+        const loadingModel = $('loadingModel');
+        const expandContainer = $('expandContainer');
+        const expandOriginal = $('expandOriginal');
+        const expandExpanded = $('expandExpanded');
+        const expandCompare = $('expandCompare');
+        const lightbox = $('lightbox');
+        const lightboxImage = $('lightboxImage');
+        const lightboxTag = $('lightboxTag');
+
+        let lastPrompt = '';
+        let lastModel = 'pollinations';
+        let lastSize = '1024x1024';
+        let lastImageUrl = '';
+        let expandedImageUrl = '';
+        let currentModelName = 'Pollinations';
+
+        promptInput.addEventListener('input', () => {
+            const len = promptInput.value.length;
+            charCount.textContent = len + ' / 500';
+            if (len > 500) promptInput.value = promptInput.value.slice(0, 500);
         });
 
-        function toggleSettings() {
-            const modal = document.getElementById('settingsModal');
-            modal.classList.toggle('hidden');
+        modelSelector.addEventListener('change', () => {
+            const m = modelSelector.value;
+            const msgs = {
+                pollinations: 'Pollinations',
+                pollinations_hd: 'Pollinations HD',
+            };
+            modelStatus.textContent = msgs[m] || msgs.pollinations;
+            currentModelName = msgs[m] || 'AI';
+        });
+
+
+        function openLightbox(src) {
+            if (!src || src === '') return;
+            lightboxImage.src = src;
+            lightboxTag.textContent = `AI · ${currentModelName}`;
+            lightbox.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
         }
 
-        function saveSettings() {
-            const geminiKey = document.getElementById('geminiKey').value.trim();
-            const openAIKey = document.getElementById('openAIKey').value.trim();
-            
-            localStorage.setItem('kashif_gemini_key', geminiKey);
-            localStorage.setItem('kashif_openai_key', openAIKey);
-            
-            toggleSettings();
-            showToast("Settings saved successfully!", "success");
+        function closeLightbox() {
+            lightbox.classList.add('hidden');
+            document.body.style.overflow = '';
         }
 
-        function showToast(message, type = "info") {
-            const container = document.getElementById('toastContainer');
-            const toast = document.createElement('div');
-            
-            let icon = 'fa-circle-info text-blue-400';
-            let border = 'border-blue-500/20';
-            if (type === 'success') { icon = 'fa-circle-check text-green-400'; border = 'border-green-500/20'; }
-            if (type === 'error') { icon = 'fa-circle-xmark text-red-400'; border = 'border-red-500/20'; }
+        async function enhancePrompt() {
+            const prompt = promptInput.value.trim();
+            if (!prompt) { alert('Pehle kuch likhein!'); return; }
+            const prefixes = ['cinematic 8k photo of ', 'highly detailed digital art of ', 'photorealistic render of '];
+            const suffixes = [', dramatic lighting, deep shadows, vibrant colors', ', sharp focus, ultra detailed, 8k', ', masterpiece, award-winning composition'];
+            const escapeRegExp = text => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const prefixPattern = new RegExp(`^(${prefixes.map(escapeRegExp).join('|')})`, 'i');
+            const suffixPattern = new RegExp(`(${suffixes.map(escapeRegExp).join('|')})$`, 'i');
+            const basePrompt = prompt.replace(prefixPattern, '').replace(suffixPattern, '').trim();
 
-            toast.className = `toast-enter glass-panel ${border} rounded-xl p-4 flex items-center gap-3 shadow-lg max-w-sm w-full`;
-            toast.innerHTML = `
-                <i class="fa-solid ${icon} text-xl"></i>
-                <p class="text-sm font-medium text-white">${message}</p>
-            `;
-            
-            container.appendChild(toast);
-            
-            setTimeout(() => {
-                toast.style.opacity = '0';
-                toast.style.transform = 'translateX(100%)';
-                toast.style.transition = 'all 0.3s ease-in';
-                setTimeout(() => toast.remove(), 300);
-            }, 3000);
+            const pfx = prefixes[Math.floor(Math.random() * prefixes.length)];
+            const sfx = suffixes[Math.floor(Math.random() * suffixes.length)];
+            promptInput.value = pfx + basePrompt + sfx;
+        }
+
+        function getSanitizedDimensions(width, height) {
+            const w = Math.min(Math.max(width, 64), 2048);
+            const h = Math.min(Math.max(height, 64), 2048);
+            return { width: w, height: h };
         }
 
         async function handleGenerate() {
-            const prompt = document.getElementById('promptInput').value.trim();
-            const model = document.getElementById('modelSelector').value;
-            const btn = document.getElementById('generateBtn');
-            const imgContainer = document.getElementById('imageContainer');
-            const loadingState = document.getElementById('loadingState');
-            const resultImg = document.getElementById('resultImage');
-            const imageActions = document.getElementById('imageActions');
+            const prompt = promptInput.value.trim();
+            if (!prompt) { alert('Kuch prompt likhein!'); return; }
 
-            if (!prompt) {
-                showToast("Bhai, pehle image ka prompt to likhein!", "error");
-                return;
-            }
+            const model = modelSelector.value;
+            const size = sizeSelector.value;
+            let [width, height] = size.split('x').map(Number);
 
-            // UI Loading state
-            btn.disabled = true;
-            btn.innerHTML = '<span class="loader w-4 h-4 mr-2 border-2 border-darker/20 border-b-darker"></span> Generating...';
-            btn.classList.add('opacity-70', 'cursor-not-allowed');
-            
-            imgContainer.classList.remove('hidden');
-            loadingState.classList.remove('hidden');
-            loadingState.classList.add('flex');
-            resultImg.classList.add('hidden');
-            imageActions.classList.add('hidden');
+            const dims = getSanitizedDimensions(model, width, height);
+            width = dims.width;
+            height = dims.height;
+
+            lastPrompt = prompt;
+            lastModel = model;
+            lastSize = `${width}x${height}`;
+
+            expandContainer.classList.add('hidden');
+            expandedImageUrl = '';
+            imageWrapper.classList.add('hidden');
+            loadingPlaceholder.classList.remove('hidden');
+            loadingModel.textContent = currentModelName;
 
             try {
-                if (model === 'free') {
-                    // Pollinations AI - 100% Free, no keys needed
-                    const seed = Math.floor(Math.random() * 1000000);
-                    const encodedPrompt = encodeURIComponent(prompt);
-                    const imageUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=1024&height=1024&nologo=true&seed=${seed}`;
-                    
-                    // Preload image to ensure loading spinner works perfectly
-                    const response = await fetch(imageUrl);
-                    if(!response.ok) throw new Error("Free AI system busy standard error.");
-                    const blob = await response.blob();
-                    const objectURL = URL.createObjectURL(blob);
-                    
-                    resultImg.src = objectURL;
-                } 
-                else if (model === 'gemini') {
-                    const activeKey = localStorage.getItem('kashif_gemini_key');
-                    if (!activeKey) {
-                        throw new Error("Gemini API key missing. Settings gear icon par ja kar save karein.");
-                    }
-                    const url = `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${activeKey}`;
-                    const response = await fetch(url, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            instances: { prompt: prompt },
-                            parameters: { sampleCount: 1 }
-                        })
-                    });
-                    const data = await response.json();
-                    if (data.predictions && data.predictions[0] && data.predictions[0].bytesBase64Encoded) {
-                         resultImg.src = `data:image/png;base64,${data.predictions[0].bytesBase64Encoded}`;
-                    } else {
-                        throw new Error(data.error?.message || "Gemini API response error. Make sure your plan supports Imagen.");
-                    }
-                } 
-                else if (model === 'openai') {
-                    const activeKey = localStorage.getItem('kashif_openai_key');
-                    if (!activeKey) {
-                        throw new Error("OpenAI API key missing. Settings gear icon par ja kar save karein.");
-                    }
-                    const response = await fetch('https://api.openai.com/v1/images/generations', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${activeKey}`
-                        },
-                        body: JSON.stringify({
-                            model: "dall-e-3",
-                            prompt: prompt,
-                            n: 1,
-                            size: "1024x1024",
-                            response_format: "b64_json"
-                        })
-                    });
-                    const data = await response.json();
-                    if (data.data && data.data[0] && data.data[0].b64_json) {
-                        resultImg.src = `data:image/png;base64,${data.data[0].b64_json}`;
-                    } else {
-                        throw new Error(data.error?.message || "OpenAI API response error.");
-                    }
+                let imageUrl = '';
+
+                if (model === 'pollinations' || model === 'pollinations_hd') {
+                    const finalPrompt = model === 'pollinations_hd'
+                        ? `${prompt}, ultra realistic, hyper detailed, cinematic lighting, 8k, masterpiece, photorealistic`
+                        : prompt;
+                    imageUrl =
+                        `https://image.pollinations.ai/prompt/${encodeURIComponent(finalPrompt)}?width=${width}&height=${height}&nologo=true&seed=${Date.now()}`;
+                    await preloadImage(imageUrl);
+                } else {
+                    throw new Error('Unknown model');
                 }
 
-                resultImg.onload = () => {
-                    loadingState.classList.add('hidden');
-                    loadingState.classList.remove('flex');
-                    resultImg.classList.remove('hidden');
-                    imageActions.classList.remove('hidden');
-                    showToast("Zabardast! Image generate ho gayi.", "success");
-                };
+                if (!imageUrl) throw new Error('No image returned');
+                lastImageUrl = imageUrl;
+                showResult(imageUrl);
 
-            } catch (error) {
-                console.error(error);
-                imgContainer.classList.add('hidden');
-                showToast(error.message || "Koi masla aa gaya hai. Settings check karein.", "error");
+            } catch (err) {
+                alert('Error: ' + err.message);
+                console.error(err);
+                loadingPlaceholder.classList.add('hidden');
+                imageWrapper.classList.add('hidden');
             } finally {
-                btn.disabled = false;
-                btn.innerHTML = '<i class="fa-solid fa-image"></i><span>Generate Image</span>';
-                btn.classList.remove('opacity-70', 'cursor-not-allowed');
+                loadingPlaceholder.classList.add('hidden');
             }
+        }
+
+        function preloadImage(url) {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                img.crossOrigin = 'anonymous';
+                const timeout = setTimeout(() => {
+                    reject(new Error('Image load timeout (5s)'));
+                }, 5000);
+                img.onload = () => {
+                    clearTimeout(timeout);
+                    resolve(url);
+                };
+                img.onerror = () => {
+                    clearTimeout(timeout);
+                    reject(new Error(`Image load failed: ${url.substring(0, 80)}...`));
+                };
+                img.src = url;
+            });
+        }
+
+        function showResult(url) {
+            resultImage.src = url;
+            imageWrapper.classList.remove('hidden');
+            imageWrapper.classList.add('fade-in');
+            imageWrapper.style.animation = 'none';
+            requestAnimationFrame(() => {
+                imageWrapper.style.animation = 'fadeIn 0.4s ease';
+            });
+            expandContainer.classList.add('hidden');
+            expandedImageUrl = '';
+        }
+
+        function clearImage() {
+            imageWrapper.classList.add('hidden');
+            expandContainer.classList.add('hidden');
+            resultImage.src = '';
+            lastImageUrl = '';
+            expandedImageUrl = '';
         }
 
         function downloadImage() {
-            const img = document.getElementById('resultImage');
-            if (!img.src) return;
-
+            const url = resultImage.src;
+            if (!url || url === '') { alert('Pehle image generate karein!'); return; }
             const a = document.createElement('a');
-            a.href = img.src;
-            a.download = `TheVoxCritic_AI_${new Date().getTime()}.png`;
+            a.href = url;
+            a.download = `kashif-ai-${Date.now()}.png`;
             document.body.appendChild(a);
             a.click();
-            document.body.removeChild(a);
-            showToast("Image download start ho gayi!", "success");
+            a.remove();
+            if (url.startsWith('blob:')) {
+                URL.revokeObjectURL(url);
+            }
         }
+
+        async function handleExpand() {
+            if (!lastImageUrl || !lastPrompt) {
+                alert('Pehle image generate karein!');
+                return;
+            }
+
+            const model = lastModel;
+            let [w, h] = lastSize.split('x').map(Number);
+            const scale = 1.4;
+            let newW = Math.round(w * scale);
+            let newH = Math.round(h * scale);
+            const MAX = 2800;
+            if (newW > MAX) { newW = MAX;
+                newH = Math.round(MAX * (h / w)); }
+            if (newH > MAX) { newH = MAX;
+                newW = Math.round(MAX * (w / h)); }
+            newW = Math.floor(newW / 2) * 2;
+            newH = Math.floor(newH / 2) * 2;
+            const dims = getSanitizedDimensions(model, newW, newH);
+            newW = dims.width;
+            newH = dims.height;
+
+            const expandPrompt = lastPrompt +
+                ', wide angle view, expanded composition, more context around the edges, ultra wide, cinematic';
+
+            const btn = $('expandBtn');
+            const origText = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Expanding…';
+            btn.disabled = true;
+
+            try {
+                let imageUrl = '';
+                if (model === 'pollinations' || model === 'pollinations_hd') {
+                    const finalPrompt = model === 'pollinations_hd'
+                        ? `${expandPrompt}, ultra realistic, hyper detailed, cinematic lighting, 8k, masterpiece, photorealistic`
+                        : expandPrompt;
+                    imageUrl =
+                        `https://image.pollinations.ai/prompt/${encodeURIComponent(finalPrompt)}?width=${newW}&height=${newH}&nologo=true&seed=${Date.now() + 1}`;
+                    await preloadImage(imageUrl);
+                } else {
+                    throw new Error('Unknown model for expand');
+                }
+
+                if (!imageUrl) throw new Error('Expand failed');
+                expandedImageUrl = imageUrl;
+                showExpandComparison(lastImageUrl, imageUrl);
+
+            } catch (err) {
+                alert('Expand error: ' + err.message);
+                console.error(err);
+            } finally {
+                btn.innerHTML = origText;
+                btn.disabled = false;
+            }
+        }
+
+        function showExpandComparison(origUrl, expUrl) {
+            expandOriginal.src = origUrl;
+            expandExpanded.src = expUrl;
+            expandContainer.classList.remove('hidden');
+            expandContainer.classList.add('fade-in');
+        }
+
+        function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+
+        function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                e.preventDefault();
+                handleGenerate();
+            }
+            if (e.key === 'Escape') {
+                if (!lightbox.classList.contains('hidden')) closeLightbox();
+            }
+        });
+
+        modelSelector.dispatchEvent(new Event('change'));
+        promptInput.focus();
+
+        console.log('✨ Kashif\'s AI Image Studio v9 loaded.');
     </script>
 </body>
 </html>
