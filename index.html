@@ -172,6 +172,34 @@
             background: rgba(255,255,255,.9); border: 1px solid rgba(16,185,129,.25); color: #047857;
         }
         .btn-ghost:hover { background: rgba(16,185,129,.08); border-color: rgba(16,185,129,.45); }
+
+        /* ── toast notifications (no popup dialogs) ── */
+        #toastWrap {
+            position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%);
+            display: flex; flex-direction: column; gap: 10px; align-items: center;
+            z-index: 70; pointer-events: none; width: max-content; max-width: 92vw;
+        }
+        .toast {
+            pointer-events: auto;
+            display: flex; align-items: center; gap: 10px;
+            padding: 12px 18px; border-radius: 16px; font-size: .88rem; font-weight: 500;
+            background: rgba(255, 255, 255, .96);
+            border: 1px solid rgba(16, 185, 129, .3);
+            color: #063627;
+            box-shadow: 0 12px 34px rgba(4, 120, 87, .18);
+            animation: toastIn .3s ease;
+            max-width: 92vw;
+        }
+        .toast.error { border-color: rgba(239, 68, 68, .35); box-shadow: 0 12px 34px rgba(220, 38, 38, .18); }
+        .toast.warn  { border-color: rgba(245, 158, 11, .4); }
+        .toast i.info { color: #10b981; }
+        .toast i.err  { color: #ef4444; }
+        .toast i.wrn  { color: #f59e0b; }
+        .toast .to { margin-left: 6px; cursor: pointer; color: rgba(6,54,39,.4); font-weight: 700; }
+        .toast .to:hover { color: #063627; }
+        .toast.out { animation: toastOut .25s ease forwards; }
+        @keyframes toastIn { from { opacity: 0; transform: translateY(14px) scale(.96); } to { opacity: 1; transform: translateY(0) scale(1); } }
+        @keyframes toastOut { to { opacity: 0; transform: translateY(10px) scale(.96); } }
     </style>
 </head>
 <body>
@@ -255,9 +283,9 @@
             <div class="flex flex-wrap items-center justify-between gap-3 mt-5 pt-4 border-t border-emerald-500/10">
                 <span id="modelStatus" class="text-xs font-semibold text-emerald-700"><i class="fa-solid fa-bolt mr-1"></i> Sana · Crisp &amp; Fast</span>
                 <div class="flex items-center gap-2">
-                    <button onclick="enhancePrompt()" class="btn-ghost px-4 py-2.5 rounded-2xl text-sm font-semibold transition-all">
-                        <i class="fa-solid fa-wand-magic-sparkles mr-1"></i> Enhance
-                    </button>
+    <button onclick="enhancePrompt()" class="btn-ghost px-4 py-2.5 rounded-2xl text-sm font-semibold transition-all">
+        <i class="fa-solid fa-wand-magic-sparkles mr-1"></i> Enhance
+    </button>
                     <button id="generateBtn" onclick="handleGenerate()"
                         class="px-6 py-2.5 rounded-2xl font-bold text-sm text-white transition-all hover:opacity-90 active:scale-95"
                         style="background:linear-gradient(135deg,#10b981,#14b8a6); box-shadow:0 8px 22px rgba(16,185,129,.35);">
@@ -364,6 +392,9 @@
         </div>
     </div>
 
+    <!-- ====== TOASTS ====== -->
+    <div id="toastWrap"></div>
+
     <!-- ====== LIGHTBOX ====== -->
     <div id="lightbox" class="hidden fixed inset-0 z-50 modal-overlay flex items-center justify-center p-4"
         onclick="if(event.target===this)closeLightbox()">
@@ -375,6 +406,24 @@
     <!-- ====== JAVASCRIPT ====== -->
     <script>
         const $ = id => document.getElementById(id);
+
+        /* ── toast system (no block popups) ── */
+        const TOAST_ICONS = { info: 'fa-circle-info', err: 'fa-circle-xmark', wrn: 'fa-triangle-exclamation' };
+        function toast(msg, type = 'info', ms = 5000) {
+            const wrap = $('toastWrap');
+            const el = document.createElement('div');
+            el.className = 'toast ' + (type === 'err' ? 'error' : type === 'wrn' ? 'warn' : '');
+            el.innerHTML = `<i class="fa-solid ${TOAST_ICONS[type]} ${type}"></i><span>${msg}</span><span class="to" title="close"><i class="fa-solid fa-xmark"></i></span>`;
+            el.querySelector('.to').onclick = () => dismiss(el);
+            wrap.appendChild(el);
+            const t = setTimeout(() => dismiss(el), ms);
+            function dismiss(node) {
+                clearTimeout(t);
+                if (node.classList.contains('out')) return;
+                node.classList.add('out');
+                setTimeout(() => node.remove(), 250);
+            }
+        }
         const promptInput = $('promptInput');
         const resultImage = $('resultImage');
         const imageWrapper = $('imageWrapper');
@@ -447,7 +496,7 @@
         /* ── enhance (client-side, free) ── */
         function enhancePrompt() {
             const prompt = promptInput.value.trim();
-            if (!prompt) { alert('Pehle kuch likhein!'); return; }
+            if (!prompt) { toast('Pehle kuch likhein! ✍️', 'wrn', 3500); return; }
             const prefixes = ['cinematic 8k photo of ', 'highly detailed digital art of ', 'photorealistic render of '];
             const suffixes = [', dramatic lighting, deep shadows, vibrant colors', ', sharp focus, ultra detailed, 8k', ', masterpiece, award-winning composition'];
             const escapeRegExp = text => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -528,7 +577,7 @@
 
         async function handleGenerate() {
             const prompt = promptInput.value.trim();
-            if (!prompt) { alert('Kuch prompt likhein!'); return; }
+            if (!prompt) { toast('Kuch prompt likhein! ✍️', 'wrn', 3500); return; }
             if (busy) return;
             busy = true;
 
@@ -552,7 +601,7 @@
                 showResult(blobUrl);
                 pushRecent(url, prompt, currentModel.name);
             } catch (err) {
-                alert('Error: ' + err.message);
+                toast(err.message, 'err', 8000);
                 console.error(err);
             } finally {
                 setLoadingText('Generating image…', currentModel.name);
@@ -583,7 +632,7 @@
 
         function downloadImage() {
             const url = resultImage.src;
-            if (!url) { alert('Pehle image generate karein!'); return; }
+            if (!url) { toast('Pehle image generate karein! 🖼️', 'wrn', 3500); return; }
             const a = document.createElement('a');
             a.href = url;
             a.download = `kashif-ai-${Date.now()}.png`;
@@ -594,7 +643,7 @@
 
         async function handleExpand() {
             if (!lastImageUrl || !lastPrompt) {
-                alert('Pehle image generate karein!');
+                toast('Pehle image generate karein! 🖼️', 'wrn', 3500);
                 return;
             }
 
@@ -621,7 +670,7 @@
                 showExpandComparison(lastImageUrl, blobUrl);
                 pushRecent(url, lastPrompt, lastModel.name);
             } catch (err) {
-                alert('Expand error: ' + err.message);
+                toast('Expand error: ' + err.message, 'err', 8000);
                 console.error(err);
             } finally {
                 btn.innerHTML = origText;
