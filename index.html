@@ -370,6 +370,15 @@
             </div>
             <div class="space-y-4">
                 <div>
+                    <label class="text-xs font-semibold text-emerald-800/80 tracking-wide uppercase mb-1.5 block">🆓 Gemini API Key (top quality)</label>
+                    <input id="geminiKeyInput" type="password" class="w-full text-sm py-2.5 px-3.5" placeholder="AIza… khali rakhein = Gemini model off" />
+                    <div class="text-xs text-emerald-900/55 mt-2 leading-relaxed">
+                        ChatGPT/Gemini-class quality 💚 — <a href="https://aistudio.google.com/apikey" target="_blank" class="font-semibold text-leafdark underline">aistudio.google.com/apikey</a>
+                        se <b>free</b> key banao (Google account suffices, koi billing nahi) aur paste karo. Browser me hi save hoti hai.
+                    </div>
+                </div>
+                <div class="border-t border-emerald-500/10"></div>
+                <div>
                     <label class="text-xs font-semibold text-emerald-800/80 tracking-wide uppercase mb-1.5 block">Pollinations Token (optional)</label>
                     <input id="tokenInput" type="password" class="w-full text-sm py-2.5 px-3.5" placeholder="Token khali rakhein = free anonymous tier" />
                     <div class="text-xs text-emerald-900/55 mt-2 leading-relaxed">
@@ -384,8 +393,8 @@
                 
                 </div>
                 <div class="flex gap-2 pt-1">
-                    <button onclick="saveToken()" class="flex-1 px-4 py-2.5 rounded-2xl font-bold text-sm text-white" style="background:linear-gradient(135deg,#10b981,#14b8a6);">Save</button>
-                    <button onclick="clearToken()" class="btn-ghost px-4 py-2.5 rounded-2xl text-sm font-semibold">Clear</button>
+                    <button onclick="saveKeys()" class="flex-1 px-4 py-2.5 rounded-2xl font-bold text-sm text-white" style="background:linear-gradient(135deg,#10b981,#14b8a6);">Save</button>
+                    <button onclick="clearKeys()" class="btn-ghost px-4 py-2.5 rounded-2xl text-sm font-semibold">Clear</button>
                 </div>
                 <p id="tokenStatus" class="text-xs text-emerald-700 font-semibold"></p>
             </div>
@@ -443,6 +452,7 @@
         const HD_SUFFIX = 'ultra realistic, hyper detailed, cinematic lighting, 8k, masterpiece, photorealistic';
 
         const MODELS = [
+            { id: 'gemini',           name: 'Gemini',      tag: '🏆 Top Quality',  type: 'gemini',       modelParam: 'gemini-2.5-flash-image' },
             { id: 'sana',              name: 'Sana',         tag: 'Crisp & Fast',   type: 'pollinations', modelParam: 'sana' },
             { id: 'flux',              name: 'Flux',         tag: 'Most Realistic', type: 'pollinations', modelParam: 'flux' },
             { id: 'turbo',             name: 'Turbo',        tag: 'Instant',        type: 'pollinations', modelParam: 'turbo' },
@@ -464,6 +474,7 @@
             const chip = document.createElement('button');
             chip.className = 'chip' + (i === 0 ? ' active' : '');
             chip.innerHTML = `${m.name}<small>${m.tag}</small>`;
+            if (m.type === 'gemini') chip.style.gridColumn = '1 / -1';
             chip.onclick = () => {
                 document.querySelectorAll('#modelChips .chip').forEach(c => c.classList.remove('active'));
                 chip.classList.add('active');
@@ -522,6 +533,54 @@
             const token = localStorage.getItem('aivision_token');
             if (token) url += `&token=${encodeURIComponent(token)}`;
             return url;
+        }
+
+        /* ── Gemini (Nano Banana) — free API key from aistudio.google.com/apikey ── */
+        function b64ToBlob(b64, mime = 'image/png') {
+            const bin = atob(b64);
+            const arr = new Uint8Array(bin.length);
+            for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+            return new Blob([arr], { type: mime });
+        }
+
+        async function generateWithGemini(prompt, { imageB64 = null } = {}) {
+            const key = localStorage.getItem('aivision_gemini_key');
+            if (!key) {
+                throw new Error('Gemini ke liye FREE API key chahiye — Settings (⚙️) me paste karein. aistudio.google.com/apikey se 1 minute me ban jati hai.');
+            }
+            const parts = [];
+            if (imageB64) parts.push({ inlineData: { mimeType: 'image/jpeg', data: imageB64 } });
+            parts.push({ text: prompt });
+            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${encodeURIComponent(key)}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ contents: [{ parts }] })
+            });
+            const json = await res.json();
+            if (res.ok) {
+                const p = (json?.candidates?.[0]?.content?.parts || []).find(x => x.inlineData || x.inline_data);
+                if (p) {
+                    const d = p.inlineData || p.inline_data;
+                    return URL.createObjectURL(b64ToBlob(d.data, d.mimeType || d.mime_type || 'image/png'));
+                }
+                const txt = (json?.candidates?.[0]?.content?.parts || []).find(x => x.text)?.text || 'No image in response';
+                throw new Error(String(txt).slice(0, 140));
+            }
+            if (res.status === 429) throw new Error('Gemini free quota exhausted for now — kuch dair baad try karein, ya Pollinations model select karein.');
+            if (res.status === 400 || res.status === 403) {
+                const msg = json?.error?.message || '';
+                throw new Error('Gemini key issue — Settings me naye valid key paste karein. ' + String(msg).slice(0, 120));
+            }
+            throw new Error('Gemini error: HTTP ' + res.status);
+        }
+
+        async function blobToB64(blob) {
+            return new Promise((resolve, reject) => {
+                const fr = new FileReader();
+                fr.onload = () => resolve(String(fr.result).split(',')[1]);
+                fr.onerror = reject;
+                fr.readAsDataURL(blob);
+            });
         }
 
         /* ── rate-limit aware fetch loader ── */
@@ -587,7 +646,7 @@
             lastPrompt = prompt;
             lastModel = currentModel;
             lastSize = `${w}x${h}`;
-            const url = buildUrl(prompt, w, h, currentModel, Date.now());
+            lastRemoteUrl = '';
 
             expandContainer.classList.add('hidden');
             expandedImageUrl = '';
@@ -596,10 +655,24 @@
             loadingModel.textContent = currentModel.name;
 
             try {
-                const blobUrl = await loadImage(url);
-                lastRemoteUrl = url;
+                let blobUrl;
+                if (currentModel.type === 'gemini') {
+                    const [gw, gh] = [w, h];
+                    const g = gcd(gw, gh);
+                    const aspectText = (gw / g) > (gh / g)
+                        ? `wide landscape composition, aspect ratio ${gw / g}:${gh / g}`
+                        : (gh / g) > (gw / g)
+                            ? `tall portrait composition, aspect ratio ${gw / g}:${gh / g}`
+                            : `square composition, aspect ratio 1:1`;
+                    setLoadingText('Gemini image ban rahi hai…', 'top quality 🏆 (10-30 sec)');
+                    blobUrl = await generateWithGemini(`Create an image: ${prompt}. ${aspectText}${hdToggle.checked ? ', ' + HD_SUFFIX : ''}`);
+                } else {
+                    const url = buildUrl(prompt, w, h, currentModel, Date.now());
+                    lastRemoteUrl = url;
+                    blobUrl = await loadImage(url);
+                    pushRecent(url, prompt, currentModel.name);
+                }
                 showResult(blobUrl);
-                pushRecent(url, prompt, currentModel.name);
             } catch (err) {
                 toast(err.message, 'err', 8000);
                 console.error(err);
@@ -609,6 +682,8 @@
                 busy = false;
             }
         }
+
+        function gcd(a, b) { return b === 0 ? a : gcd(b, a % b); }
 
         let busy = false;
         let lastRemoteUrl = '';
@@ -657,24 +732,35 @@
 
             const expandPrompt = lastPrompt +
                 ', wide angle view, expanded composition, more context around the edges, ultra wide, cinematic';
-            const url = buildUrl(expandPrompt, newW, newH, lastModel, Date.now() + 1);
 
             const btn = $('expandBtn');
             const origText = btn.innerHTML;
             btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Expanding…';
             btn.disabled = true;
+            busy = true;
 
             try {
-                const blobUrl = await loadImage(url);
+                let blobUrl;
+                if (lastModel.type === 'gemini') {
+                    setLoadingText('Gemini se expand ho rahi hai…', 'editing original image 🏆');
+                    const origBlob = await (await fetch(lastImageUrl)).blob();
+                    const b64 = await blobToB64(origBlob);
+                    blobUrl = await generateWithGemini(`Expand this image: keep the same style, characters and lighting, but show a wider field of view with more context around the edges. ${expandPrompt}`, { imageB64: b64 });
+                } else {
+                    const url = buildUrl(expandPrompt, newW, newH, lastModel, Date.now() + 1);
+                    lastRemoteUrl = url;
+                    blobUrl = await loadImage(url);
+                    pushRecent(url, lastPrompt, lastModel.name);
+                }
                 expandedImageUrl = blobUrl;
                 showExpandComparison(lastImageUrl, blobUrl);
-                pushRecent(url, lastPrompt, lastModel.name);
             } catch (err) {
                 toast('Expand error: ' + err.message, 'err', 8000);
                 console.error(err);
             } finally {
                 btn.innerHTML = origText;
                 btn.disabled = false;
+                busy = false;
             }
         }
 
@@ -714,34 +800,43 @@
             renderRecent();
         }
 
-        /* ── settings (pollinations token) ── */
+        /* ── settings (gemini key + pollinations token) ── */
         function openSettings() {
             $('tokenInput').value = localStorage.getItem('aivision_token') || '';
+            $('geminiKeyInput').value = localStorage.getItem('aivision_gemini_key') || '';
             updateTokenStatus();
             $('settingsModal').classList.remove('hidden');
         }
         function closeSettings() {
             $('settingsModal').classList.add('hidden');
         }
-        function saveToken() {
+        function saveKeys() {
             const t = $('tokenInput').value.trim();
             if (t) localStorage.setItem('aivision_token', t);
             else localStorage.removeItem('aivision_token');
+            const k = $('geminiKeyInput').value.trim();
+            if (k) localStorage.setItem('aivision_gemini_key', k);
+            else localStorage.removeItem('aivision_gemini_key');
             updateTokenStatus();
             closeSettings();
+            toast('Settings saved ✅', 'info', 3000);
         }
-        function clearToken() {
+        function clearKeys() {
             localStorage.removeItem('aivision_token');
+            localStorage.removeItem('aivision_gemini_key');
             $('tokenInput').value = '';
+            $('geminiKeyInput').value = '';
             updateTokenStatus();
         }
         function updateTokenStatus() {
             const el = $('tokenStatus');
-            if (localStorage.getItem('aivision_token')) {
-                el.innerHTML = '<i class="fa-solid fa-circle-check mr-1"></i>Token saved — unlimited tier active';
-            } else {
-                el.innerHTML = '<i class="fa-solid fa-circle-info mr-1"></i>Anonymous tier active (rate limited)';
-            }
+            const part1 = localStorage.getItem('aivision_gemini_key')
+                ? '<i class="fa-solid fa-circle-check mr-1"></i> Gemini key saved — top quality on'
+                : '<i class="fa-solid fa-circle-info mr-1"></i> Gemini key absent — anonymous tier';
+            const part2 = localStorage.getItem('aivision_token')
+                ? ' · Pollinations token saved (unlimited)'
+                : '';
+            el.innerHTML = part1 + part2;
         }
 
         document.addEventListener('keydown', (e) => {
