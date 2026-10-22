@@ -1,284 +1,237 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en">
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>AI Image Studio · Kashif</title>
-    <script src="https://cdn.tailwindcss.com">
-    </script>
+    <title>AI Vision · Kashif</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet" />
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
     <script>
         tailwind.config = {
-            darkMode: 'class',
             theme: {
                 extend: {
                     fontFamily: { sans: ['"Plus Jakarta Sans"', 'sans-serif'] },
                     colors: {
-                        dark: '#0f111a',
-                        darker: '#0a0b10',
-                        primary: '#6366f1',
-                        secondary: '#a855f7',
+                        mint: '#f2fbf5',
+                        leaf: '#10b981',
+                        leafdark: '#047857',
+                        tealx: '#14b8a6',
+                        ink: '#063627',
                     }
                 }
             }
         }
     </script>
     <style>
-        /* ── (styles same as v8, kept for brevity but fully functional) ── */
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
         body {
-            background: radial-gradient(circle at top, rgba(99, 102, 241, 0.08), transparent 25%), radial-gradient(circle at bottom, rgba(168, 85, 247, 0.05), transparent 18%), #06080f;
-            color: #ebf1ff;
+            background:
+                radial-gradient(900px circle at 10% -10%, rgba(16, 185, 129, 0.10), transparent 55%),
+                radial-gradient(700px circle at 95% 15%, rgba(20, 184, 166, 0.08), transparent 50%),
+                radial-gradient(800px circle at 50% 110%, rgba(52, 211, 153, 0.10), transparent 55%),
+                #f6fdf8;
+            color: #12332a;
             font-family: 'Plus Jakarta Sans', sans-serif;
             min-height: 100vh;
             display: flex;
             flex-direction: column;
         }
-        .glass {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.08);
+
+        .card {
+            background: rgba(255, 255, 255, 0.75);
+            border: 1px solid rgba(16, 185, 129, 0.14);
+            box-shadow: 0 10px 30px rgba(4, 120, 87, 0.07);
             backdrop-filter: blur(10px);
         }
-        .glass-heavy {
-            background: rgba(255, 255, 255, 0.08);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(12px);
-        }
-        ::-webkit-scrollbar {
-            width: 6px;
-        }
-        ::-webkit-scrollbar-track {
-            background: transparent;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: rgba(99, 102, 241, 0.4);
-            border-radius: 12px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: rgba(99, 102, 241, 0.7);
-        }
+        .card:hover { border-color: rgba(16, 185, 129, 0.22); }
+
+        ::-webkit-scrollbar { width: 6px; height: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(16, 185, 129, 0.35); border-radius: 12px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(16, 185, 129, 0.6); }
+
         .spinner {
-            border: 2px solid rgba(255, 255, 255, 0.08);
-            border-top-color: #8b5cf6;
+            border: 3px solid rgba(16, 185, 129, 0.18);
+            border-top-color: #10b981;
             border-radius: 50%;
-            width: 40px;
-            height: 40px;
+            width: 40px; height: 40px;
             animation: spin 0.8s linear infinite;
         }
-        @keyframes spin {
-            to {
-                transform: rotate(360deg);
-            }
-        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
         #resultImage {
             max-width: 100%;
-            max-height: 70vh;
+            max-height: 68vh;
             object-fit: contain;
             border-radius: 22px;
-            box-shadow: 0 18px 36px rgba(0, 0, 0, 0.24);
+            border: 1px solid rgba(16, 185, 129, 0.16);
+            box-shadow: 0 18px 40px rgba(4, 120, 87, 0.14);
             cursor: pointer;
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            transition: transform .2s ease, box-shadow .2s ease;
         }
-        #resultImage:hover {
-            transform: scale(1.01);
-            box-shadow: 0 25px 70px rgba(99, 102, 241, 0.15);
-        }
-        .expand-compare {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-        }
-        .expand-compare .thumb {
-            border-radius: 12px;
-            overflow: hidden;
-            border: 1px solid rgba(255, 255, 255, 0.06);
-            background: rgba(0, 0, 0, 0.3);
-        }
-        .expand-compare .thumb img {
-            width: 100%;
-            height: auto;
-            display: block;
-            cursor: pointer;
-        }
-        .expand-compare .thumb .label {
-            font-size: 0.65rem;
-            text-transform: uppercase;
-            letter-spacing: 0.06em;
-            padding: 6px 12px;
-            background: rgba(0, 0, 0, 0.5);
-            backdrop-filter: blur(4px);
-            text-align: center;
+        #resultImage:hover { transform: scale(1.01); box-shadow: 0 24px 60px rgba(16, 185, 129, 0.22); }
+
+        .compare { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .compare .thumb { border-radius: 14px; overflow: hidden; border: 1px solid rgba(16, 185, 129, 0.16); background: #fff; }
+        .compare .thumb img { width: 100%; height: auto; display: block; cursor: pointer; }
+        .compare .thumb .label {
+            font-size: .65rem; text-transform: uppercase; letter-spacing: .06em; padding: 6px 12px;
+            background: rgba(6, 95, 70, .88); color: #d1fae5; text-align: center;
         }
         @media (max-width: 640px) {
-            .expand-compare {
-                grid-template-columns: 1fr;
-            }
-            #resultImage {
-                max-height: 50vh;
-            }
+            .compare { grid-template-columns: 1fr; }
+            #resultImage { max-height: 50vh; }
         }
-        .btn-glow:hover {
-            box-shadow: 0 0 12px rgba(99, 102, 241, 0.12);
+
+        select, textarea, input {
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid rgba(16, 185, 129, 0.22);
+            color: #12332a;
+            border-radius: 16px;
+            transition: border-color .2s, background .2s, box-shadow .2s;
         }
-        .modal-overlay {
-            background: rgba(0, 0, 0, 0.85);
-            backdrop-filter: blur(12px);
-            animation: fadeIn 0.25s ease;
-        }
-        .modal-overlay img {
-            max-width: 94vw;
-            max-height: 94vh;
-            object-fit: contain;
-            border-radius: 12px;
-            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.8);
-        }
-        select,
-        input[type="password"],
-        input[type="text"] {
-            background: rgba(255, 255, 255, 0.08);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            color: #e5e7eb;
-            border-radius: 18px;
-            padding: 10px 14px;
-            font-size: 0.95rem;
-            transition: border-color 0.2s, background 0.2s;
-        }
-        select:focus,
-        input:focus {
+        select:focus, textarea:focus, input:focus {
             outline: none;
-            border-color: rgba(99, 102, 241, 0.35);
-            background: rgba(255, 255, 255, 0.12);
+            border-color: #10b981;
+            box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.12);
+            background: #fff;
         }
-        select option {
-            background: #121827;
-        }
+        select option { background: #ffffff; color: #12332a; }
+
         textarea {
-            background: rgba(255, 255, 255, 0.08);
-            border: 1px solid rgba(255, 255, 255, 0.12);
-            color: #f1f3f5;
+            width: 100%;
+            min-height: 120px;
+            padding: 16px;
             font-size: 1rem;
             line-height: 1.6;
             resize: vertical;
-            min-height: 140px;
-            width: 100%;
-            padding: 16px 16px;
-            border-radius: 20px;
         }
-        textarea::placeholder {
-            color: rgba(255, 255, 255, 0.3);
-        }
-        textarea:focus {
-            outline: none;
-        }
+        textarea::placeholder { color: rgba(6, 54, 39, 0.35); }
+
         .badge {
-            font-size: 0.65rem;
-            font-weight: 600;
-            letter-spacing: 0.06em;
-            padding: 5px 14px;
+            font-size: .65rem; font-weight: 600; letter-spacing: .05em; padding: 5px 12px;
             border-radius: 999px;
-            background: rgba(255, 255, 255, 0.08);
-            border: 1px solid rgba(255, 255, 255, 0.12);
-            color: #f8fafc;
+            background: rgba(16, 185, 129, 0.10);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            color: #047857;
         }
-        .fade-in {
-            animation: fadeIn 0.4s ease;
+
+        .fade-in { animation: fadeIn .4s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+        .fade-in-fast { animation: fadeIn .2s ease; }
+
+        .modal-overlay {
+            background: rgba(4, 22, 16, 0.8);
+            backdrop-filter: blur(12px);
+            animation: fadeIn .25s ease;
         }
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(12px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-        .fade-in-fast {
-            animation: fadeIn 0.2s ease;
-        }
-        .settings-trigger {
-            cursor: pointer;
-            transition: transform 0.2s;
-        }
-        .settings-trigger:hover {
-            transform: rotate(60deg);
+        .modal-overlay img {
+            max-width: 94vw; max-height: 94vh; object-fit: contain;
+            border-radius: 12px; box-shadow: 0 30px 80px rgba(0, 0, 0, 0.8);
         }
         .lightbox-close {
-            position: absolute;
-            top: 14px;
-            right: 14px;
-            font-size: 1.6rem;
-            color: rgba(255, 255, 255, 0.8);
-            cursor: pointer;
-            transition: color 0.2s, transform 0.2s;
-            z-index: 60;
-            background: rgba(0, 0, 0, 0.28);
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border: 1px solid rgba(255, 255, 255, 0.12);
+            position: absolute; top: 14px; right: 14px;
+            width: 40px; height: 40px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            color: rgba(255, 255, 255, .85); cursor: pointer;
+            background: rgba(0, 0, 0, .3); border: 1px solid rgba(255, 255, 255, .14);
+            transition: color .2s, transform .2s, background .2s;
         }
-        .lightbox-close:hover {
-            color: #fff;
-            transform: rotate(90deg);
-            background: rgba(0, 0, 0, 0.6);
-        }
+        .lightbox-close:hover { color: #fff; transform: rotate(90deg); background: rgba(0, 0, 0, .6); }
+
         .model-tag {
-            position: absolute;
-            bottom: 22px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0, 0, 0, 0.48);
-            backdrop-filter: blur(8px);
-            padding: 5px 16px;
-            border-radius: 999px;
-            font-size: 0.72rem;
-            color: #c0cbff;
-            border: 1px solid rgba(255, 255, 255, 0.08);
+            position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+            background: rgba(6, 36, 26, 0.55); backdrop-filter: blur(8px);
+            padding: 5px 16px; border-radius: 999px;
+            font-size: .72rem; color: #d1fae5;
+            border: 1px solid rgba(255, 255, 255, 0.12);
             pointer-events: none;
         }
+
+        .chip {
+            cursor: pointer; user-select: none; text-align: center;
+            padding: 8px 14px; border-radius: 14px; font-size: .8rem; font-weight: 600;
+            border: 1px solid rgba(16, 185, 129, 0.2); background: rgba(255, 255, 255, .7); color: #0b5340;
+            transition: all .18s ease;
+        }
+        .chip:hover { background: rgba(16, 185, 129, .08); border-color: rgba(16, 185, 129, .4); }
+        .chip.active {
+            background: linear-gradient(135deg, #10b981, #14b8a6);
+            color: #fff; border-color: transparent;
+            box-shadow: 0 6px 18px rgba(16, 185, 129, .28);
+        }
+        .chip small { display: block; font-weight: 400; opacity: .72; font-size: .62rem; letter-spacing: .03em; }
+
+        .recent-thumb { width: 64px; height: 64px; object-fit: cover; border-radius: 12px; cursor: pointer;
+            border: 1px solid rgba(16, 185, 129, .25); transition: transform .15s ease; }
+        .recent-thumb:hover { transform: scale(1.07); }
+
+        .btn-ghost {
+            background: rgba(255,255,255,.9); border: 1px solid rgba(16,185,129,.25); color: #047857;
+        }
+        .btn-ghost:hover { background: rgba(16,185,129,.08); border-color: rgba(16,185,129,.45); }
     </style>
 </head>
 <body>
 
     <!-- ====== NAV ====== -->
-    <nav class="glass sticky top-0 z-40 w-full border-b border-white/10">
+    <nav class="card sticky top-0 z-40 w-full border-b" style="border-radius:0; border-left:none; border-right:none; border-top:none;">
         <div class="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-2.5">
+                <div class="w-9 h-9 rounded-2xl flex items-center justify-center text-white" style="background:linear-gradient(135deg,#10b981,#14b8a6); box-shadow:0 6px 16px rgba(16,185,129,.35);">
+                    <i class="fa-solid fa-leaf"></i>
+                </div>
+                <span class="font-bold text-lg tracking-tight text-ink">AI Vision</span>
+                <span class="badge hidden sm:inline">FREE</span>
+            </div>
             <div class="flex items-center gap-3">
-                <span class="font-semibold text-lg tracking-tight">AI Vision</span>
+                <span class="text-xs text-emerald-700/70 hidden sm:block">made by <b>Kashif</b> 💚</span>
             </div>
         </div>
     </nav>
 
     <!-- ====== MAIN ====== -->
-    <main class="flex-grow max-w-5xl mx-auto w-full px-4 py-6 sm:py-10 flex flex-col gap-6">
+    <main class="flex-grow max-w-5xl mx-auto w-full px-4 py-8 sm:py-12 flex flex-col gap-7">
 
-        <div class="text-center space-y-1">
-            <h1 class="text-3xl sm:text-4xl font-semibold tracking-tight">AI Vision</h1>
-            <p class="text-gray-400 text-sm max-w-md mx-auto">Minimal image generation in one clean flow.</p>
+        <div class="text-center space-y-2">
+            <h1 class="text-4xl sm:text-5xl font-extrabold tracking-tight text-ink">
+                Create with <span style="background:linear-gradient(135deg,#10b981,#14b8a6); -webkit-background-clip:text; background-clip:text; color:transparent;">AI Vision</span>
+            </h1>
+            <p class="text-emerald-900/60 text-sm sm:text-base max-w-md mx-auto">
+                Free image generation — multiple models, one clean flow. ✨
+            </p>
         </div>
 
         <!-- ====== INPUT PANEL ====== -->
-        <div class="glass rounded-2xl p-4 sm:p-5 w-full max-w-3xl mx-auto border border-white/5">
+        <div class="card rounded-3xl p-4 sm:p-6 w-full max-w-3xl mx-auto">
 
-            <textarea id="promptInput" rows="3" class="w-full text-white placeholder:text-gray-500/60 focus:outline-none resize-y text-base sm:text-lg" placeholder="Apna idea likhein … e.g. a cyberpunk city at sunset, neon lights, rain, 8k"></textarea>
+            <!-- prompt -->
+            <label class="text-xs font-semibold text-emerald-800/80 tracking-wide uppercase mb-2 block">
+                <i class="fa-solid fa-wand-magic-sparkles mr-1"></i> Your idea
+            </label>
+            <textarea id="promptInput" rows="3"
+                placeholder="Apna idea likhein… e.g. a cyberpunk city at sunset, neon lights, rain, 8k"></textarea>
 
-            <div class="flex flex-wrap items-center justify-between gap-3 mt-2 pt-3 border-t border-white/5">
+            <div class="flex justify-between items-center mt-1.5 text-xs text-emerald-900/50">
+                <span id="charCount">0 / 500</span>
+                <span>Ctrl + Enter = Generate</span>
+            </div>
 
-                <div class="flex flex-wrap items-center gap-2">
-                    <select id="modelSelector" class="text-sm">
-                        <option value="pollinations">Pollinations</option>
-                        <option value="pollinations_hd">Pollinations HD</option>
-                    </select>
-                    <select id="sizeSelector" class="text-sm">
+            <!-- models -->
+            <label class="text-xs font-semibold text-emerald-800/80 tracking-wide uppercase mb-2 mt-5 block">
+                <i class="fa-solid fa-layer-group mr-1"></i> Model
+            </label>
+            <div id="modelChips" class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                <!-- chips injected by JS -->
+            </div>
+
+            <!-- size + hd -->
+            <div class="flex flex-wrap items-center justify-between gap-3 mt-5">
+                <div class="flex items-center gap-2">
+                    <label class="text-xs font-semibold text-emerald-800/80 tracking-wide uppercase">Size</label>
+                    <select id="sizeSelector" class="text-sm py-2">
                         <option value="1024x1024">1:1 · Square</option>
                         <option value="1024x1280">4:5 · Portrait</option>
                         <option value="1280x1024">5:4 · Landscape</option>
@@ -289,77 +242,101 @@
                         <option value="2048x2048">✨ 2K Square</option>
                     </select>
                 </div>
-
-                <div class="flex flex-wrap items-center gap-2">
-                    <button onclick="enhancePrompt()" class="bg-white/10 hover:bg-white/15 px-4 py-2 rounded-2xl text-sm font-medium transition-all border border-white/10">
-                        Enhance
-                    </button>
-                    <button id="generateBtn" onclick="handleGenerate()" class="bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90 px-6 py-2 rounded-2xl font-semibold text-sm shadow-sm shadow-primary/15 btn-glow transition-all">
-                        Generate
-                    </button>
-                </div>
+                <label class="flex items-center gap-2 cursor-pointer select-none">
+                    <input type="checkbox" id="hdToggle" class="w-4 h-4 accent-emerald-500 rounded" />
+                    <span class="text-sm font-medium text-emerald-900/80">HD Detail <small class="text-emerald-900/45">(extra realistic prompt)</small></span>
+                </label>
             </div>
 
-            <div class="flex justify-between items-center mt-3 text-xs text-gray-400">
-                <span id="modelStatus">Pollinations</span>
-                <span id="charCount">0 / 500</span>
+            <!-- actions -->
+            <div class="flex flex-wrap items-center justify-between gap-3 mt-5 pt-4 border-t border-emerald-500/10">
+                <span id="modelStatus" class="text-xs font-semibold text-emerald-700"><i class="fa-solid fa-bolt mr-1"></i> Sana · Crisp &amp; Fast</span>
+                <div class="flex items-center gap-2">
+                    <button onclick="enhancePrompt()" class="btn-ghost px-4 py-2.5 rounded-2xl text-sm font-semibold transition-all">
+                        <i class="fa-solid fa-wand-magic-sparkles mr-1"></i> Enhance
+                    </button>
+                    <button id="generateBtn" onclick="handleGenerate()"
+                        class="px-6 py-2.5 rounded-2xl font-bold text-sm text-white transition-all hover:opacity-90 active:scale-95"
+                        style="background:linear-gradient(135deg,#10b981,#14b8a6); box-shadow:0 8px 22px rgba(16,185,129,.35);">
+                        <i class="fa-solid fa-play mr-1"></i> Generate
+                    </button>
+                </div>
             </div>
         </div>
 
         <!-- ====== IMAGE RESULT ====== -->
-        <div id="imageWrapper" class="hidden glass rounded-2xl p-4 sm:p-5 w-full max-w-3xl mx-auto border border-white/5 transition-all">
+        <div id="imageWrapper" class="hidden card rounded-3xl p-4 sm:p-6 w-full max-w-3xl mx-auto">
             <div class="relative flex flex-col items-center">
                 <div class="w-full flex justify-center relative">
-                    <img id="resultImage" src="" alt="AI Image" class="rounded-xl shadow-2xl max-h-[70vh] w-auto" onclick="openLightbox(this.src)" />
-                    <div class="absolute bottom-3 right-3 bg-black/35 rounded-full px-3 py-1 text-xs text-gray-300 border border-white/10 pointer-events-none">
+                    <img id="resultImage" src="" alt="AI Image" onclick="openLightbox(this.src)" />
+                    <div class="absolute bottom-3 right-3 bg-black/30 rounded-full px-3 py-1 text-xs text-white border border-white/20 pointer-events-none">
                         <i class="fa-regular fa-expand"></i>
                     </div>
                 </div>
 
                 <div class="flex flex-wrap items-center justify-center gap-3 mt-4 w-full">
-                    <button onclick="downloadImage()" class="bg-white/10 hover:bg-white/15 px-5 py-2 rounded-2xl text-sm font-medium transition-all border border-white/10">
-                        Download
+                    <button onclick="downloadImage()" class="btn-ghost px-5 py-2.5 rounded-2xl text-sm font-semibold transition-all">
+                        <i class="fa-solid fa-download mr-1"></i> Download
                     </button>
-                    <button onclick="handleExpand()" id="expandBtn" class="bg-emerald-500 hover:bg-emerald-400 px-5 py-2 rounded-2xl text-sm font-semibold shadow-sm shadow-emerald-400/20 transition-all">
-                        Expand
+                    <button onclick="handleExpand()" id="expandBtn"
+                        class="px-5 py-2.5 rounded-2xl text-sm font-bold text-white transition-all hover:opacity-90"
+                        style="background:linear-gradient(135deg,#14b8a6,#10b981); box-shadow:0 8px 20px rgba(20,184,166,.3);">
+                        <i class="fa-solid fa-arrows-left-right mr-1"></i> Expand
                     </button>
-                    <button onclick="clearImage()" class="bg-white/10 hover:bg-white/15 px-4 py-2 rounded-2xl text-sm transition-all border border-white/10">
-                        Clear
+                    <button onclick="clearImage()" class="btn-ghost px-4 py-2.5 rounded-2xl text-sm transition-all">
+                        <i class="fa-solid fa-xmark mr-1"></i> Clear
                     </button>
                 </div>
 
-                <div id="expandContainer" class="hidden w-full mt-5 pt-4 border-t border-white/10">
-                    <p class="text-xs text-gray-400 mb-3 flex items-center gap-2"><i class="fa-regular fa-arrows-left-right"></i> Original · Expanded</p>
-                    <div class="expand-compare" id="expandCompare">
+                <div id="expandContainer" class="hidden w-full mt-5 pt-4 border-t border-emerald-500/10">
+                    <p class="text-xs text-emerald-800/70 mb-3 flex items-center gap-2">
+                        <i class="fa-regular fa-arrows-left-right"></i> Original · Expanded
+                    </p>
+                    <div class="compare" id="expandCompare">
                         <div class="thumb">
                             <img id="expandOriginal" src="" alt="original" onclick="openLightbox(this.src)" />
-                            <div class="label text-gray-400">Original</div>
+                            <div class="label">Original</div>
                         </div>
                         <div class="thumb">
                             <img id="expandExpanded" src="" alt="expanded" onclick="openLightbox(this.src)" />
-                            <div class="label text-gray-400">Expanded</div>
+                            <div class="label">Expanded</div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- ====== LOADING ====== -->
-<div id="loadingPlaceholder" class="hidden glass rounded-2xl p-8 w-full max-w-3xl mx-auto border border-white/10 flex flex-col items-center justify-center min-h-[280px]">
-            <div class="spinner"></div>
-            <p class="mt-4 text-sm text-gray-400">Generating image…</p>
-            <p class="text-xs text-gray-400 mt-1" id="loadingModel">Pollinations</p>
+        <!-- ====== RECENT ====== -->
+        <div id="recentSection" class="hidden card rounded-3xl p-4 sm:p-5 w-full max-w-3xl mx-auto">
+            <div class="flex items-center justify-between mb-3">
+                <p class="text-xs font-semibold text-emerald-800/80 tracking-wide uppercase">
+                    <i class="fa-solid fa-clock-rotate-left mr-1"></i> Recent
+                </p>
+                <button onclick="clearHistory()" class="text-xs text-emerald-700/60 hover:text-red-500 transition-colors">clear</button>
+            </div>
+            <div id="recentRow" class="flex flex-wrap gap-2.5"></div>
         </div>
 
+        <!-- ====== LOADING ====== -->
+        <div id="loadingPlaceholder" class="hidden card rounded-3xl p-8 w-full max-w-3xl mx-auto flex flex-col items-center justify-center min-h-[280px]">
+            <div class="spinner"></div>
+            <p class="mt-4 text-sm font-medium text-emerald-900/70">Generating image…</p>
+            <p class="text-xs text-emerald-900/45 mt-1" id="loadingModel">Sana</p>
+        </div>
     </main>
 
+    <!-- ====== FOOTER ====== -->
+    <footer class="max-w-5xl mx-auto w-full px-4 py-6 text-center text-xs text-emerald-900/40">
+        AI Image Studio v10 · Free models powered by Pollinations · Made with 💚 by Kashifzia
+    </footer>
+
     <!-- ====== LIGHTBOX ====== -->
-    <div id="lightbox" class="hidden fixed inset-0 z-50 modal-overlay flex items-center justify-center p-4" onclick="if(event.target===this)closeLightbox()">
+    <div id="lightbox" class="hidden fixed inset-0 z-50 modal-overlay flex items-center justify-center p-4"
+        onclick="if(event.target===this)closeLightbox()">
         <div class="lightbox-close" onclick="closeLightbox()"><i class="fa-solid fa-xmark"></i></div>
         <img id="lightboxImage" src="" alt="Full size" class="fade-in-fast" />
         <div class="model-tag" id="lightboxTag">AI Image</div>
     </div>
-
 
     <!-- ====== JAVASCRIPT ====== -->
     <script>
@@ -368,47 +345,62 @@
         const resultImage = $('resultImage');
         const imageWrapper = $('imageWrapper');
         const loadingPlaceholder = $('loadingPlaceholder');
-        const modelSelector = $('modelSelector');
         const sizeSelector = $('sizeSelector');
         const modelStatus = $('modelStatus');
         const charCount = $('charCount');
         const loadingModel = $('loadingModel');
         const expandContainer = $('expandContainer');
-        const expandOriginal = $('expandOriginal');
-        const expandExpanded = $('expandExpanded');
-        const expandCompare = $('expandCompare');
+        const hdToggle = $('hdToggle');
         const lightbox = $('lightbox');
         const lightboxImage = $('lightboxImage');
         const lightboxTag = $('lightboxTag');
+        const recentSection = $('recentSection');
+        const recentRow = $('recentRow');
 
+        const HD_SUFFIX = 'ultra realistic, hyper detailed, cinematic lighting, 8k, masterpiece, photorealistic';
+
+        const MODELS = [
+            { id: 'sana',              name: 'Sana',         tag: 'Crisp & Fast',   type: 'pollinations', modelParam: 'sana' },
+            { id: 'flux',              name: 'Flux',         tag: 'Most Realistic', type: 'pollinations', modelParam: 'flux' },
+            { id: 'turbo',             name: 'Turbo',        tag: 'Instant',        type: 'pollinations', modelParam: 'turbo' },
+            { id: 'flux_anime',        name: 'Anime',        tag: 'Anime / Manga',  type: 'pollinations', modelParam: 'flux-anime' },
+        ];
+
+        let currentModel = MODELS[0];
         let lastPrompt = '';
-        let lastModel = 'pollinations';
+        let lastModel = MODELS[0];
         let lastSize = '1024x1024';
         let lastImageUrl = '';
         let expandedImageUrl = '';
-        let currentModelName = 'Pollinations';
+        const API_BASE = 'https://image.pollinations.ai/prompt/';
+        const LOAD_TIMEOUT_MS = 120000; // 2 min — Pollinations can be slow on big sizes
 
+        /* ── model chips ── */
+        const chipsWrap = $('modelChips');
+        MODELS.forEach((m, i) => {
+            const chip = document.createElement('button');
+            chip.className = 'chip' + (i === 0 ? ' active' : '');
+            chip.innerHTML = `${m.name}<small>${m.tag}</small>`;
+            chip.onclick = () => {
+                document.querySelectorAll('#modelChips .chip').forEach(c => c.classList.remove('active'));
+                chip.classList.add('active');
+                currentModel = m;
+                modelStatus.innerHTML = `<i class="fa-solid fa-bolt mr-1"></i> ${m.name} · ${m.tag}`;
+            };
+            chipsWrap.appendChild(chip);
+        });
+
+        /* ── prompt counter ── */
         promptInput.addEventListener('input', () => {
             const len = promptInput.value.length;
-            charCount.textContent = len + ' / 500';
+            $('charCount').textContent = len + ' / 500';
             if (len > 500) promptInput.value = promptInput.value.slice(0, 500);
         });
 
-        modelSelector.addEventListener('change', () => {
-            const m = modelSelector.value;
-            const msgs = {
-                pollinations: 'Pollinations',
-                pollinations_hd: 'Pollinations HD',
-            };
-            modelStatus.textContent = msgs[m] || msgs.pollinations;
-            currentModelName = msgs[m] || 'AI';
-        });
-
-
         function openLightbox(src) {
-            if (!src || src === '') return;
+            if (!src) return;
             lightboxImage.src = src;
-            lightboxTag.textContent = `AI · ${currentModelName}`;
+            lightboxTag.textContent = `AI · ${currentModel.name}`;
             lightbox.classList.remove('hidden');
             document.body.style.overflow = 'hidden';
         }
@@ -418,7 +410,8 @@
             document.body.style.overflow = '';
         }
 
-        async function enhancePrompt() {
+        /* ── enhance (client-side, free) ── */
+        function enhancePrompt() {
             const prompt = promptInput.value.trim();
             if (!prompt) { alert('Pehle kuch likhein!'); return; }
             const prefixes = ['cinematic 8k photo of ', 'highly detailed digital art of ', 'photorealistic render of '];
@@ -427,97 +420,74 @@
             const prefixPattern = new RegExp(`^(${prefixes.map(escapeRegExp).join('|')})`, 'i');
             const suffixPattern = new RegExp(`(${suffixes.map(escapeRegExp).join('|')})$`, 'i');
             const basePrompt = prompt.replace(prefixPattern, '').replace(suffixPattern, '').trim();
-
             const pfx = prefixes[Math.floor(Math.random() * prefixes.length)];
             const sfx = suffixes[Math.floor(Math.random() * suffixes.length)];
             promptInput.value = pfx + basePrompt + sfx;
         }
 
         function getSanitizedDimensions(width, height) {
-            const w = Math.min(Math.max(width, 64), 2048);
-            const h = Math.min(Math.max(height, 64), 2048);
-            return { width: w, height: h };
+            const w = Math.min(Math.max(Number(width) || 1024, 64), 2048);
+            const h = Math.min(Math.max(Number(height) || 1024, 64), 2048);
+            return { width: Math.floor(w / 2) * 2, height: Math.floor(h / 2) * 2 };
+        }
+
+        function buildUrl(prompt, width, height, model, seed) {
+            const finalPrompt = hdToggle.checked ? `${prompt}, ${HD_SUFFIX}` : prompt;
+            const dims = getSanitizedDimensions(width, height);
+            return `${API_BASE}${encodeURIComponent(finalPrompt)}?width=${dims.width}&height=${dims.height}&nologo=true&seed=${seed}&model=${model.modelParam}`;
+        }
+
+        function preloadImage(url) {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                img.onload = () => { clearTimeout(timeout); resolve(url); };
+                img.onerror = () => { clearTimeout(timeout); reject(new Error('Image load failed. Dobara try karein.')); };
+                const timeout = setTimeout(() => {
+                    img.src = '';
+                    reject(new Error('Generation timed out. Chhoti size try karein ya dubara prompt bhejein.'));
+                }, LOAD_TIMEOUT_MS);
+                img.src = url; // no crossOrigin needed (URL loading)
+            });
         }
 
         async function handleGenerate() {
             const prompt = promptInput.value.trim();
             if (!prompt) { alert('Kuch prompt likhein!'); return; }
 
-            const model = modelSelector.value;
             const size = sizeSelector.value;
-            let [width, height] = size.split('x').map(Number);
-
-            const dims = getSanitizedDimensions(model, width, height);
-            width = dims.width;
-            height = dims.height;
+            const [w, h] = size.split('x').map(Number);
 
             lastPrompt = prompt;
-            lastModel = model;
-            lastSize = `${width}x${height}`;
+            lastModel = currentModel;
+            lastSize = `${w}x${h}`;
+            const url = buildUrl(prompt, w, h, currentModel, Date.now());
 
             expandContainer.classList.add('hidden');
             expandedImageUrl = '';
             imageWrapper.classList.add('hidden');
             loadingPlaceholder.classList.remove('hidden');
-            loadingModel.textContent = currentModelName;
+            loadingModel.textContent = currentModel.name;
 
             try {
-                let imageUrl = '';
-
-                if (model === 'pollinations' || model === 'pollinations_hd') {
-                    const finalPrompt = model === 'pollinations_hd'
-                        ? `${prompt}, ultra realistic, hyper detailed, cinematic lighting, 8k, masterpiece, photorealistic`
-                        : prompt;
-                    imageUrl =
-                        `https://image.pollinations.ai/prompt/${encodeURIComponent(finalPrompt)}?width=${width}&height=${height}&nologo=true&seed=${Date.now()}`;
-                    await preloadImage(imageUrl);
-                } else {
-                    throw new Error('Unknown model');
-                }
-
-                if (!imageUrl) throw new Error('No image returned');
-                lastImageUrl = imageUrl;
-                showResult(imageUrl);
-
+                await preloadImage(url);
+                lastImageUrl = url;
+                showResult(url);
+                pushRecent(url, prompt, currentModel.name);
             } catch (err) {
                 alert('Error: ' + err.message);
                 console.error(err);
-                loadingPlaceholder.classList.add('hidden');
-                imageWrapper.classList.add('hidden');
             } finally {
                 loadingPlaceholder.classList.add('hidden');
             }
-        }
-
-        function preloadImage(url) {
-            return new Promise((resolve, reject) => {
-                const img = new Image();
-                img.crossOrigin = 'anonymous';
-                const timeout = setTimeout(() => {
-                    reject(new Error('Image load timeout (5s)'));
-                }, 5000);
-                img.onload = () => {
-                    clearTimeout(timeout);
-                    resolve(url);
-                };
-                img.onerror = () => {
-                    clearTimeout(timeout);
-                    reject(new Error(`Image load failed: ${url.substring(0, 80)}...`));
-                };
-                img.src = url;
-            });
         }
 
         function showResult(url) {
             resultImage.src = url;
             imageWrapper.classList.remove('hidden');
             imageWrapper.classList.add('fade-in');
-            imageWrapper.style.animation = 'none';
-            requestAnimationFrame(() => {
-                imageWrapper.style.animation = 'fadeIn 0.4s ease';
-            });
             expandContainer.classList.add('hidden');
             expandedImageUrl = '';
+            imageWrapper.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }
 
         function clearImage() {
@@ -530,16 +500,13 @@
 
         function downloadImage() {
             const url = resultImage.src;
-            if (!url || url === '') { alert('Pehle image generate karein!'); return; }
+            if (!url) { alert('Pehle image generate karein!'); return; }
             const a = document.createElement('a');
             a.href = url;
             a.download = `kashif-ai-${Date.now()}.png`;
             document.body.appendChild(a);
             a.click();
             a.remove();
-            if (url.startsWith('blob:')) {
-                URL.revokeObjectURL(url);
-            }
         }
 
         async function handleExpand() {
@@ -548,24 +515,17 @@
                 return;
             }
 
-            const model = lastModel;
-            let [w, h] = lastSize.split('x').map(Number);
+            const [w, h] = lastSize.split('x').map(Number);
             const scale = 1.4;
             let newW = Math.round(w * scale);
             let newH = Math.round(h * scale);
             const MAX = 2800;
-            if (newW > MAX) { newW = MAX;
-                newH = Math.round(MAX * (h / w)); }
-            if (newH > MAX) { newH = MAX;
-                newW = Math.round(MAX * (w / h)); }
-            newW = Math.floor(newW / 2) * 2;
-            newH = Math.floor(newH / 2) * 2;
-            const dims = getSanitizedDimensions(model, newW, newH);
-            newW = dims.width;
-            newH = dims.height;
+            if (newW > MAX) { newW = MAX; newH = Math.round(MAX * (h / w)); }
+            if (newH > MAX) { newH = MAX; newW = Math.round(MAX * (w / h)); }
 
             const expandPrompt = lastPrompt +
                 ', wide angle view, expanded composition, more context around the edges, ultra wide, cinematic';
+            const url = buildUrl(expandPrompt, newW, newH, lastModel, Date.now() + 1);
 
             const btn = $('expandBtn');
             const origText = btn.innerHTML;
@@ -573,22 +533,9 @@
             btn.disabled = true;
 
             try {
-                let imageUrl = '';
-                if (model === 'pollinations' || model === 'pollinations_hd') {
-                    const finalPrompt = model === 'pollinations_hd'
-                        ? `${expandPrompt}, ultra realistic, hyper detailed, cinematic lighting, 8k, masterpiece, photorealistic`
-                        : expandPrompt;
-                    imageUrl =
-                        `https://image.pollinations.ai/prompt/${encodeURIComponent(finalPrompt)}?width=${newW}&height=${newH}&nologo=true&seed=${Date.now() + 1}`;
-                    await preloadImage(imageUrl);
-                } else {
-                    throw new Error('Unknown model for expand');
-                }
-
-                if (!imageUrl) throw new Error('Expand failed');
-                expandedImageUrl = imageUrl;
-                showExpandComparison(lastImageUrl, imageUrl);
-
+                await preloadImage(url);
+                expandedImageUrl = url;
+                showExpandComparison(lastImageUrl, url);
             } catch (err) {
                 alert('Expand error: ' + err.message);
                 console.error(err);
@@ -599,31 +546,53 @@
         }
 
         function showExpandComparison(origUrl, expUrl) {
-            expandOriginal.src = origUrl;
-            expandExpanded.src = expUrl;
+            $('expandOriginal').src = origUrl;
+            $('expandExpanded').src = expUrl;
             expandContainer.classList.remove('hidden');
             expandContainer.classList.add('fade-in');
         }
 
-        function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
-
-
-        function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+        /* ── recent history (localStorage) ── */
+        function getHistory() {
+            try { return JSON.parse(localStorage.getItem('aivision_history') || '[]'); }
+            catch { return []; }
+        }
+        function pushRecent(url, prompt, modelName) {
+            const hist = getHistory().filter(h => h.url !== url);
+            hist.unshift({ url, prompt, modelName });
+            localStorage.setItem('aivision_history', JSON.stringify(hist.slice(0, 6)));
+            renderRecent();
+        }
+        function renderRecent() {
+            const hist = getHistory();
+            recentSection.classList.toggle('hidden', hist.length === 0);
+            recentRow.innerHTML = '';
+            hist.forEach(h => {
+                const img = document.createElement('img');
+                img.src = h.url;
+                img.title = h.prompt;
+                img.className = 'recent-thumb';
+                img.onclick = () => { promptInput.value = h.prompt; resultImage.src = h.url; imageWrapper.classList.remove('hidden'); imageWrapper.classList.add('fade-in'); lastImageUrl = h.url; };
+                recentRow.appendChild(img);
+            });
+        }
+        function clearHistory() {
+            localStorage.removeItem('aivision_history');
+            renderRecent();
+        }
 
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
                 e.preventDefault();
                 handleGenerate();
             }
-            if (e.key === 'Escape') {
-                if (!lightbox.classList.contains('hidden')) closeLightbox();
-            }
+            if (e.key === 'Escape') closeLightbox();
         });
 
-        modelSelector.dispatchEvent(new Event('change'));
+        renderRecent();
         promptInput.focus();
 
-        console.log('✨ Kashif\'s AI Image Studio v9 loaded.');
+        console.log('🌿 AI Vision v10 loaded — light green edition.');
     </script>
 </body>
 </html>
