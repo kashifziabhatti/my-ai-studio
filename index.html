@@ -345,14 +345,15 @@
                     <label class="text-xs font-semibold text-emerald-800/80 tracking-wide uppercase mb-1.5 block">Pollinations Token (optional)</label>
                     <input id="tokenInput" type="password" class="w-full text-sm py-2.5 px-3.5" placeholder="Token khali rakhein = free anonymous tier" />
                     <div class="text-xs text-emerald-900/55 mt-2 leading-relaxed">
-                        Free limit hit ho toispoken lagao — <b>token unlimited requests</b> deta hai, bill kuch nahi.
-                        <a href="https://auth.pollinations.ai" target="_blank" class="font-semibold text-leafdark underline">auth.pollinations.ai</a>
-                        pe GitHub sign-in kar ke token copy karein. Ye sirf aapke browser me (localStorage) save hota hai.
+                        Token lagao to <b>unlimited requests</b> — 100% free hai, koi payment nahi.
+                        <a href="https://enter.pollinations.ai/?ref=classic" target="_blank" class="font-semibold text-leafdark underline">enter.pollinations.ai</a>
+                        pe Pollen key copy karein aur yahan paste karein. Ye sirf aapke browser me (localStorage) save hota hai.
                     </div>
                 </div>
                 <div class="text-xs text-emerald-900/55 leading-relaxed">
                     <i class="fa-solid fa-circle-info mr-1 text-emerald-500"></i>
-                    Anonymous tier: ~1 image / 10 sec. App ab automatic retry + waiting system use karti hai, limit par agai image apne aap ban jaye gi.
+                    Anonymous tier: 1 image / 45 sec per IP. Limit aane par app automatic retry karta hai — thumbnail chhoti size fast hai, 2K slow. Token se unlimited.
+                
                 </div>
                 <div class="flex gap-2 pt-1">
                     <button onclick="saveToken()" class="flex-1 px-4 py-2.5 rounded-2xl font-bold text-sm text-white" style="background:linear-gradient(135deg,#10b981,#14b8a6);">Save</button>
@@ -467,7 +468,8 @@
         function buildUrl(prompt, width, height, model, seed) {
             const finalPrompt = hdToggle.checked ? `${prompt}, ${HD_SUFFIX}` : prompt;
             const dims = getSanitizedDimensions(width, height);
-            let url = `${API_BASE}${encodeURIComponent(finalPrompt)}?width=${dims.width}&height=${dims.height}&nologo=true&seed=${seed}&model=${model.modelParam}&referrer=kashifziabhatti.github.io`;
+            const safeSeed = Math.abs(Math.floor(Number(seed))) % 2147483647;
+            let url = `${API_BASE}${encodeURIComponent(finalPrompt)}?width=${dims.width}&height=${dims.height}&nologo=true&seed=${safeSeed}&model=${model.modelParam}&referrer=kashifziabhatti.github.io`;
             const token = localStorage.getItem('aivision_token');
             if (token) url += `&token=${encodeURIComponent(token)}`;
             return url;
@@ -483,7 +485,6 @@
         }
 
         async function loadImage(url, { silent = false } = {}) {
-            let lastErr = '';
             for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
                 try {
                     if (!silent) setLoadingText('Generating image…', `${currentModel.name} · attempt ${attempt}/${MAX_ATTEMPTS}`);
@@ -493,37 +494,33 @@
                         return URL.createObjectURL(await res.blob());
                     }
 
-                    // 429 / quota style responses
-                    const retryAfter = Number(res.headers.get('retry-after')) || 0;
-                    let msg = '';
-                    try { const t = await res.text(); msg = (t.match(/limit[^"<]*|quota[^"<]*/i) || [t.slice(0, 120)])[0]; } catch { }
-
-                    if (res.status === 429 || /limit|quota/i.test(msg)) {
-                        const wait = retryAfter > 0 ? retryAfter : attempt * 10;
-                        if (attempt < MAX_ATTEMPTS) {
-                            for (let s = wait; s > 0; s--) {
-                                if (!silent) setLoadingText(`Free limit reached — waiting ${s}s`, 'auto-retry chal raha hai ☕');
-                                await sleep(1000);
-                            }
-                            lastErr = 'limit-reached';
-                            continue;
-                        }
-                        lastErr = '::. Token lagao! Free limit max retries cross kar gayi. Settings (⚙️) me Pollinations token paste karein — unlimited free.::';
-                        throw new Error(lastErr.replace(/::/g, ''));
+                    // 429 / 402 (FREE_LIMIT) style responses
+                    let body = '';
+                    try { body = await res.text(); } catch { }
+                    let m = body.match(/[Ff]ree limit reached.*?[Rr]etry after (\d+)\s*s/);
+                    let wait = m ? Math.min(Number(m[1]) + 2, 70) : 0;
+                    if (!wait) {
+                        const ra = Number(res.headers.get('retry-after'));
+                        if (ra > 0) wait = Math.min(ra + 2, 70);
                     }
 
-                    lastErr = `HTTP ${res.status}`;
-                    throw new Error(lastErr);
-                } catch (err) {
-                    lastErr = err.message;
-                    if (err.message === 'limit-reached') continue;
-                    // network drop → retry quietly, else rethrow
-                    if (attempt < MAX_ATTEMPTS && !(err.message.startsWith('Token'))) {
-                        await sleep(attempt * 4000);
+                    if (wait > 0 && attempt < MAX_ATTEMPTS) {
+                        for (let s = wait; s > 0; s--) {
+                            if (!silent) setLoadingText(`Free limit — waiting ${s}s`, 'phir try karenge ☕ (45s per IP limit hai)');
+                            await sleep(1000);
+                        }
                         continue;
                     }
-                    if (err.message.startsWith('Token')) throw err;
-                    if (attempt === MAX_ATTEMPTS) throw new Error(`Generation failed (${lastErr}). Dobara try karein.`);
+
+                    const code = (body.match(/"code":"([^"]+)"/) || [])[1] || '';
+                    if (code === 'FREE_LIMIT' || res.status === 429 || res.status === 402) {
+                        throw new Error('Free limit reached. 1 image / 45s allowed. Token lagao (⚙️ settings) — bilkul free unlimited. Ya thodi der me dubara try karein.');
+                    }
+                    throw new Error(`HTTP ${res.status}`);
+                } catch (err) {
+                    if (err.message.startsWith('Free limit') || err.message.startsWith('HTTP')) throw err;
+                    if (attempt === MAX_ATTEMPTS) throw new Error(`Generation failed (${err.message}). Dobara try karein.`);
+                    await sleep(3000);
                 }
             }
             throw new Error('Generation failed — please try again.');
