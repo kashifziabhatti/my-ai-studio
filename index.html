@@ -188,6 +188,9 @@
             </div>
             <div class="flex items-center gap-3">
                 <span class="text-xs text-emerald-700/70 hidden sm:block">made by <b>Kashif</b> 💚</span>
+                <button onclick="openSettings()" class="btn-ghost w-9 h-9 rounded-2xl flex items-center justify-center transition-all settings-trigger" title="Settings">
+                    <i class="fa-solid fa-gear"></i>
+                </button>
             </div>
         </div>
     </nav>
@@ -330,6 +333,36 @@
         AI Image Studio v10 · Free models powered by Pollinations · Made with 💚 by Kashifzia
     </footer>
 
+    <!-- ====== SETTINGS ====== -->
+    <div id="settingsModal" class="hidden fixed inset-0 z-50 modal-overlay flex items-center justify-center p-4" onclick="if(event.target===this)closeSettings()">
+        <div class="card rounded-3xl p-6 w-full max-w-md fade-in" style="background:rgba(255,255,255,.95);">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="font-bold text-lg text-ink"><i class="fa-solid fa-gear mr-2 text-emerald-500"></i>Settings</h3>
+                <button onclick="closeSettings()" class="w-8 h-8 rounded-full btn-ghost flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="space-y-4">
+                <div>
+                    <label class="text-xs font-semibold text-emerald-800/80 tracking-wide uppercase mb-1.5 block">Pollinations Token (optional)</label>
+                    <input id="tokenInput" type="password" class="w-full text-sm py-2.5 px-3.5" placeholder="Token khali rakhein = free anonymous tier" />
+                    <div class="text-xs text-emerald-900/55 mt-2 leading-relaxed">
+                        Free limit hit ho toispoken lagao — <b>token unlimited requests</b> deta hai, bill kuch nahi.
+                        <a href="https://auth.pollinations.ai" target="_blank" class="font-semibold text-leafdark underline">auth.pollinations.ai</a>
+                        pe GitHub sign-in kar ke token copy karein. Ye sirf aapke browser me (localStorage) save hota hai.
+                    </div>
+                </div>
+                <div class="text-xs text-emerald-900/55 leading-relaxed">
+                    <i class="fa-solid fa-circle-info mr-1 text-emerald-500"></i>
+                    Anonymous tier: ~1 image / 10 sec. App ab automatic retry + waiting system use karti hai, limit par agai image apne aap ban jaye gi.
+                </div>
+                <div class="flex gap-2 pt-1">
+                    <button onclick="saveToken()" class="flex-1 px-4 py-2.5 rounded-2xl font-bold text-sm text-white" style="background:linear-gradient(135deg,#10b981,#14b8a6);">Save</button>
+                    <button onclick="clearToken()" class="btn-ghost px-4 py-2.5 rounded-2xl text-sm font-semibold">Clear</button>
+                </div>
+                <p id="tokenStatus" class="text-xs text-emerald-700 font-semibold"></p>
+            </div>
+        </div>
+    </div>
+
     <!-- ====== LIGHTBOX ====== -->
     <div id="lightbox" class="hidden fixed inset-0 z-50 modal-overlay flex items-center justify-center p-4"
         onclick="if(event.target===this)closeLightbox()">
@@ -434,25 +467,73 @@
         function buildUrl(prompt, width, height, model, seed) {
             const finalPrompt = hdToggle.checked ? `${prompt}, ${HD_SUFFIX}` : prompt;
             const dims = getSanitizedDimensions(width, height);
-            return `${API_BASE}${encodeURIComponent(finalPrompt)}?width=${dims.width}&height=${dims.height}&nologo=true&seed=${seed}&model=${model.modelParam}`;
+            let url = `${API_BASE}${encodeURIComponent(finalPrompt)}?width=${dims.width}&height=${dims.height}&nologo=true&seed=${seed}&model=${model.modelParam}&referrer=kashifziabhatti.github.io`;
+            const token = localStorage.getItem('aivision_token');
+            if (token) url += `&token=${encodeURIComponent(token)}`;
+            return url;
         }
 
-        function preloadImage(url) {
-            return new Promise((resolve, reject) => {
-                const img = new Image();
-                img.onload = () => { clearTimeout(timeout); resolve(url); };
-                img.onerror = () => { clearTimeout(timeout); reject(new Error('Image load failed. Dobara try karein.')); };
-                const timeout = setTimeout(() => {
-                    img.src = '';
-                    reject(new Error('Generation timed out. Chhoti size try karein ya dubara prompt bhejein.'));
-                }, LOAD_TIMEOUT_MS);
-                img.src = url; // no crossOrigin needed (URL loading)
-            });
+        /* ── rate-limit aware fetch loader ── */
+        const MAX_ATTEMPTS = 3;
+        function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+        function setLoadingText(main, sub) {
+            if (main !== null) loadingPlaceholder.querySelector('p').textContent = main;
+            if (sub !== null) loadingModel.textContent = sub;
+        }
+
+        async function loadImage(url, { silent = false } = {}) {
+            let lastErr = '';
+            for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+                try {
+                    if (!silent) setLoadingText('Generating image…', `${currentModel.name} · attempt ${attempt}/${MAX_ATTEMPTS}`);
+                    const res = await fetch(url);
+
+                    if (res.ok && (res.headers.get('content-type') || '').startsWith('image/')) {
+                        return URL.createObjectURL(await res.blob());
+                    }
+
+                    // 429 / quota style responses
+                    const retryAfter = Number(res.headers.get('retry-after')) || 0;
+                    let msg = '';
+                    try { const t = await res.text(); msg = (t.match(/limit[^"<]*|quota[^"<]*/i) || [t.slice(0, 120)])[0]; } catch { }
+
+                    if (res.status === 429 || /limit|quota/i.test(msg)) {
+                        const wait = retryAfter > 0 ? retryAfter : attempt * 10;
+                        if (attempt < MAX_ATTEMPTS) {
+                            for (let s = wait; s > 0; s--) {
+                                if (!silent) setLoadingText(`Free limit reached — waiting ${s}s`, 'auto-retry chal raha hai ☕');
+                                await sleep(1000);
+                            }
+                            lastErr = 'limit-reached';
+                            continue;
+                        }
+                        lastErr = '::. Token lagao! Free limit max retries cross kar gayi. Settings (⚙️) me Pollinations token paste karein — unlimited free.::';
+                        throw new Error(lastErr.replace(/::/g, ''));
+                    }
+
+                    lastErr = `HTTP ${res.status}`;
+                    throw new Error(lastErr);
+                } catch (err) {
+                    lastErr = err.message;
+                    if (err.message === 'limit-reached') continue;
+                    // network drop → retry quietly, else rethrow
+                    if (attempt < MAX_ATTEMPTS && !(err.message.startsWith('Token'))) {
+                        await sleep(attempt * 4000);
+                        continue;
+                    }
+                    if (err.message.startsWith('Token')) throw err;
+                    if (attempt === MAX_ATTEMPTS) throw new Error(`Generation failed (${lastErr}). Dobara try karein.`);
+                }
+            }
+            throw new Error('Generation failed — please try again.');
         }
 
         async function handleGenerate() {
             const prompt = promptInput.value.trim();
             if (!prompt) { alert('Kuch prompt likhein!'); return; }
+            if (busy) return;
+            busy = true;
 
             const size = sizeSelector.value;
             const [w, h] = size.split('x').map(Number);
@@ -469,17 +550,22 @@
             loadingModel.textContent = currentModel.name;
 
             try {
-                await preloadImage(url);
-                lastImageUrl = url;
-                showResult(url);
+                const blobUrl = await loadImage(url);
+                lastRemoteUrl = url;
+                showResult(blobUrl);
                 pushRecent(url, prompt, currentModel.name);
             } catch (err) {
                 alert('Error: ' + err.message);
                 console.error(err);
             } finally {
+                setLoadingText('Generating image…', currentModel.name);
                 loadingPlaceholder.classList.add('hidden');
+                busy = false;
             }
         }
+
+        let busy = false;
+        let lastRemoteUrl = '';
 
         function showResult(url) {
             resultImage.src = url;
@@ -533,9 +619,10 @@
             btn.disabled = true;
 
             try {
-                await preloadImage(url);
-                expandedImageUrl = url;
-                showExpandComparison(lastImageUrl, url);
+                const blobUrl = await loadImage(url);
+                expandedImageUrl = blobUrl;
+                showExpandComparison(lastImageUrl, blobUrl);
+                pushRecent(url, lastPrompt, lastModel.name);
             } catch (err) {
                 alert('Expand error: ' + err.message);
                 console.error(err);
@@ -581,6 +668,36 @@
             renderRecent();
         }
 
+        /* ── settings (pollinations token) ── */
+        function openSettings() {
+            $('tokenInput').value = localStorage.getItem('aivision_token') || '';
+            updateTokenStatus();
+            $('settingsModal').classList.remove('hidden');
+        }
+        function closeSettings() {
+            $('settingsModal').classList.add('hidden');
+        }
+        function saveToken() {
+            const t = $('tokenInput').value.trim();
+            if (t) localStorage.setItem('aivision_token', t);
+            else localStorage.removeItem('aivision_token');
+            updateTokenStatus();
+            closeSettings();
+        }
+        function clearToken() {
+            localStorage.removeItem('aivision_token');
+            $('tokenInput').value = '';
+            updateTokenStatus();
+        }
+        function updateTokenStatus() {
+            const el = $('tokenStatus');
+            if (localStorage.getItem('aivision_token')) {
+                el.innerHTML = '<i class="fa-solid fa-circle-check mr-1"></i>Token saved — unlimited tier active';
+            } else {
+                el.innerHTML = '<i class="fa-solid fa-circle-info mr-1"></i>Anonymous tier active (rate limited)';
+            }
+        }
+
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
                 e.preventDefault();
@@ -590,9 +707,10 @@
         });
 
         renderRecent();
+        updateTokenStatus();
         promptInput.focus();
 
-        console.log('🌿 AI Vision v10 loaded — light green edition.');
+        console.log('🌿 AI Vision v10.1 — retry + token edition.');
     </script>
 </body>
 </html>
